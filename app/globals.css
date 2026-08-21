@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-playfair);
+  
+  --color-primary-900: #0B2E6B;
+  --color-primary-500: #1B4DB1;
+  --color-accent-900: #7A1626;
+  --color-accent-500: #A01F2E;
+  --color-gold-500: #C9A227;
+  --color-gold-400: #E8C24D;
+  --color-neutral-50: #FAF8F3;
+  --color-neutral-900: #0f172a;
+}
+
+@layer base {
+  :root {
+    --background: var(--color-neutral-50);
+    --foreground: var(--color-neutral-900);
+  }
+  .dark {
+    --background: #061026; /* Bleu nuit presque noir */
+    --foreground: var(--color-neutral-50);
+  }
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif), serif;
+}

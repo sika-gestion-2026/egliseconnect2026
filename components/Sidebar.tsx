@@ -1,0 +1,83 @@
+'use client'
+
+import { useState } from 'react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+
+type NavItem = {
+  name: string
+  href: string
+  icon: React.ReactNode
+}
+
+export default function Sidebar({ churchName, navItems, userEmail }: { churchName: string, navItems: NavItem[], userEmail: string }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const pathname = usePathname()
+
+  return (
+    <>
+      {/* Mobile Header */}
+      <div className="md:hidden flex items-center justify-between bg-primary-900 text-white p-4">
+        <h2 className="text-lg font-serif text-gold-400 truncate font-bold flex items-center gap-2">
+          {churchName}
+        </h2>
+        <button onClick={() => setIsOpen(!isOpen)} className="p-2 bg-primary-800 rounded-md">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+      </div>
+
+      {/* Overlay */}
+      {isOpen && (
+        <div className="md:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setIsOpen(false)}></div>
+      )}
+
+      {/* Sidebar */}
+      <aside className={`
+        fixed inset-y-0 left-0 z-50 w-64 bg-primary-900 text-white flex flex-col border-r-4 border-gold-500 transition-transform duration-300 ease-in-out
+        md:relative md:translate-x-0
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        <div className="p-6 border-b border-primary-500 hidden md:block">
+          <h2 className="text-xl font-serif text-gold-400 truncate flex items-center gap-3" title={churchName}>
+            <span className="truncate">{churchName}</span>
+          </h2>
+          <p className="text-xs text-gray-300 mt-2">Espace Administration</p>
+        </div>
+        
+        <div className="md:hidden p-4 border-b border-primary-500 flex justify-between items-center">
+          <span className="font-bold text-gold-400 truncate">{userEmail}</span>
+          <button onClick={() => setIsOpen(false)} className="p-2">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+          {navItems.map((item) => {
+            const isActive = item.href === '/dashboard'
+              ? pathname === '/dashboard'
+              : pathname === item.href || pathname?.startsWith(item.href + '/')
+            return (
+              <Link 
+                key={item.href} 
+                href={item.href} 
+                onClick={() => setIsOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${isActive ? 'bg-primary-500 text-gold-400 font-bold' : 'hover:bg-primary-800'}`}
+              >
+                {item.icon}
+                {item.name}
+              </Link>
+            )
+          })}
+        </nav>
+        <div className="p-4 border-t border-primary-500">
+          <form action="/auth/signout" method="post">
+            <button className="w-full text-left px-4 py-3 text-sm font-bold text-red-300 hover:text-red-100 hover:bg-primary-800 rounded-md transition-colors flex items-center gap-2">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+              Déconnexion
+            </button>
+          </form>
+        </div>
+      </aside>
+    </>
+  )
+}

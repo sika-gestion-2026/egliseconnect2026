@@ -1,0 +1,21 @@
+{
+  "name": "Église Connect",
+  "short_name": "Église Connect",
+  "description": "Plateforme de gestion pour les églises. Connectés à Dieu, unis entre nous.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1e3a8a",
+  "icons": [
+    {
+      "src": "/logo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "/logo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}

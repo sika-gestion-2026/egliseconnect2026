@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { cookies } from 'next/headers'
+import ChurchesTable from './ChurchesTable'
 
 export default async function SuperAdminDashboard() {
   const cookieStore = await cookies()
@@ -37,44 +38,7 @@ export default async function SuperAdminDashboard() {
           </div>
           {/* We will add more metrics here later */}
         </div>
-        <div className="mt-10">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-2xl font-serif">Liste des Églises</h3>
-            <a href="/super-admin/churches/new" className="px-4 py-2 bg-primary-900 text-white rounded-md text-sm font-medium hover:bg-primary-500 transition-colors shadow-sm">
-              + Nouvelle Église
-            </a>
-          </div>
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-md overflow-hidden">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-100 dark:bg-slate-700 text-sm uppercase text-gray-600 dark:text-gray-300">
-                  <th className="px-6 py-4 font-medium">Code</th>
-                  <th className="px-6 py-4 font-medium">Nom</th>
-                  <th className="px-6 py-4 font-medium">Ville</th>
-                  <th className="px-6 py-4 font-medium">Statut</th>
-                  <th className="px-6 py-4 font-medium text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
-                {churches?.map((church) => (
-                  <tr key={church.id} className="hover:bg-gray-50 dark:hover:bg-slate-750">
-                    <td className="px-6 py-4 font-mono text-sm">{church.code}</td>
-                    <td className="px-6 py-4 font-medium text-primary-900 dark:text-gold-400">{church.name}</td>
-                    <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{church.city}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${church.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}`}>
-                        {church.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button className="text-sm text-accent-500 hover:text-accent-900 font-medium">Gérer</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <ChurchesTable churches={churches || []} />
       </main>
     </div>
   )

@@ -1,5 +1,6 @@
 import { login, signup } from './actions'
 import Link from 'next/link'
+import { PasswordInput } from './PasswordInput'
 
 
 
@@ -58,26 +59,7 @@ export default async function LoginPage({
                 />
               </div>
               
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                  Mot de passe
-                </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  className="w-full px-4 py-3 mt-1 border rounded-md border-gray-300 dark:border-gray-700 dark:bg-slate-800 focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-shadow"
-                  placeholder="••••••••"
-                />
-                
-                {/* Lien mot de passe oublié */}
-                <div className="flex justify-end mt-2">
-                  <Link href="/forgot-password" className="text-sm font-medium text-primary-900 dark:text-gold-400 hover:text-gold-500 hover:underline transition-colors">
-                    Mot de passe oublié ?
-                  </Link>
-                </div>
-              </div>
+              <PasswordInput />
             </div>
 
             <div className="flex flex-col gap-3 pt-2">

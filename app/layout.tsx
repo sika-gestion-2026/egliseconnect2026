@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
+import { SuperAdminOmnibox } from "@/components/SuperAdminOmnibox";
+import ToastProvider from "@/components/ToastProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -35,6 +37,8 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         {children}
+        <SuperAdminOmnibox />
+        <ToastProvider />
       </body>
     </html>
   );

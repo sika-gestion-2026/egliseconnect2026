@@ -1,6 +1,8 @@
 import { createClient } from '@/utils/supabase/server'
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
+import PhotoUploadPreview from '@/components/PhotoUploadPreview'
+import FormActions from '@/components/FormActions'
 
 export default async function SettingsPage() {
   const cookieStore = await cookies()
@@ -16,6 +18,25 @@ export default async function SettingsPage() {
     const sb = createClient(cs)
     const { data: { user: u } } = await sb.auth.getUser()
     const { data: p } = await sb.from('user_profiles').select('church_id').eq('id', u?.id).single()
+    
+    const { data: currentChurch } = await sb.from('churches').select('logo_url').eq('id', p?.church_id).single()
+
+    let finalLogoUrl = currentChurch?.logo_url
+    const logoFile = formData.get('logo_file') as File
+
+    if (logoFile && logoFile.size > 0) {
+      const fileExt = logoFile.name.split('.').pop()
+      const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`
+      
+      const { data: uploadData, error: uploadError } = await sb.storage
+        .from('logos')
+        .upload(fileName, logoFile)
+        
+      if (!uploadError && uploadData) {
+        const { data: publicUrlData } = sb.storage.from('logos').getPublicUrl(uploadData.path)
+        finalLogoUrl = publicUrlData.publicUrl
+      }
+    }
 
     await sb.from('churches').update({
       name: formData.get('name'),
@@ -25,6 +46,7 @@ export default async function SettingsPage() {
       quartier: formData.get('quartier'),
       leader_name: formData.get('leader_name'),
       leader_contact: formData.get('leader_contact'),
+      logo_url: finalLogoUrl,
     }).eq('id', p?.church_id)
 
     revalidatePath('/dashboard/settings')
@@ -49,6 +71,8 @@ export default async function SettingsPage() {
       </div>
 
       <form action={updateChurch} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border-t-4 border-primary-900 p-8 space-y-6">
+        <PhotoUploadPreview name="logo_file" defaultPhotoUrl={church?.logo_url} fallbackIcon="⛪" />
+
         <h2 className="text-xl font-bold text-primary-900 dark:text-gold-400 pb-2 border-b dark:border-slate-700">Informations Générales</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -88,12 +112,7 @@ export default async function SettingsPage() {
           </div>
         </div>
 
-        <div className="flex justify-end pt-4 border-t dark:border-slate-700">
-          <button type="submit" className="px-8 py-3 bg-primary-900 hover:bg-primary-500 text-white font-bold rounded-md shadow-md transition-colors flex items-center gap-2">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-            Enregistrer les modifications
-          </button>
-        </div>
+        <FormActions submitText="Enregistrer les modifications" />
       </form>
     </div>
   )

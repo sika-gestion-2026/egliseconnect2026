@@ -32,8 +32,10 @@ export async function login(formData: FormData) {
       redirect('/super-admin')
     } else if (!profile?.church_id) {
       redirect('/join-church')
-    } else {
+    } else if (profile?.role === 'church_admin') {
       redirect('/dashboard')
+    } else {
+      redirect('/member-dashboard')
     }
   }
 }

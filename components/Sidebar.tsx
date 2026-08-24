@@ -10,7 +10,17 @@ type NavItem = {
   icon: React.ReactNode
 }
 
-export default function Sidebar({ churchName, navItems, userEmail }: { churchName: string, navItems: NavItem[], userEmail: string }) {
+export default function Sidebar({ 
+  churchName, 
+  logoUrl, 
+  navItems, 
+  userEmail 
+}: { 
+  churchName: string
+  logoUrl?: string | null
+  navItems: NavItem[]
+  userEmail: string 
+}) {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
 
@@ -19,7 +29,14 @@ export default function Sidebar({ churchName, navItems, userEmail }: { churchNam
       {/* Mobile Header */}
       <div className="md:hidden flex items-center justify-between bg-primary-900 text-white p-4">
         <h2 className="text-lg font-serif text-gold-400 truncate font-bold flex items-center gap-2">
-          {churchName}
+          {logoUrl ? (
+            <img src={logoUrl} alt={churchName} className="w-8 h-8 rounded-full object-cover border border-gold-500 flex-shrink-0 animate-fade-in" />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-primary-800 flex items-center justify-center font-bold text-sm text-gold-400 border border-gold-500 flex-shrink-0">
+              ⛪
+            </div>
+          )}
+          <span className="truncate">{churchName}</span>
         </h2>
         <button onClick={() => setIsOpen(!isOpen)} className="p-2 bg-primary-800 rounded-md">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
@@ -38,10 +55,21 @@ export default function Sidebar({ churchName, navItems, userEmail }: { churchNam
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div className="p-6 border-b border-primary-500 hidden md:block">
-          <h2 className="text-xl font-serif text-gold-400 truncate flex items-center gap-3" title={churchName}>
-            <span className="truncate">{churchName}</span>
-          </h2>
-          <p className="text-xs text-gray-300 mt-2">Espace Administration</p>
+          <div className="flex items-center gap-3">
+            {logoUrl ? (
+              <img src={logoUrl} alt={churchName} className="w-12 h-12 rounded-full object-cover border-2 border-gold-500 flex-shrink-0 animate-fade-in" />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-primary-800 flex items-center justify-center font-bold text-xl text-gold-400 border-2 border-gold-500 flex-shrink-0">
+                ⛪
+              </div>
+            )}
+            <div className="truncate">
+              <h2 className="text-lg font-serif text-gold-400 truncate font-bold" title={churchName}>
+                {churchName}
+              </h2>
+              <p className="text-xs text-gray-300 mt-0.5">Espace Administration</p>
+            </div>
+          </div>
         </div>
         
         <div className="md:hidden p-4 border-b border-primary-500 flex justify-between items-center">

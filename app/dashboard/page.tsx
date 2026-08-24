@@ -1,6 +1,8 @@
 import { createClient } from '@/utils/supabase/server'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import GrowthChart from './GrowthChart'
+import AnnouncementEditor from './AnnouncementEditor'
 
 export default async function ChurchDashboard() {
   const cookieStore = await cookies()
@@ -24,6 +26,19 @@ export default async function ChurchDashboard() {
     .select('*', { count: 'exact', head: true })
     .eq('church_id', profile.church_id)
 
+  // Récupérer tous les membres pour calculer les absences et les anniversaires
+  const { data: rawMembers } = await supabase
+    .from('members')
+    .select('id, first_name, last_name, phone, quartier, birth_date, photo_url, created_at, user_profiles(role)')
+    .eq('church_id', profile.church_id)
+
+  const allMembers = rawMembers?.filter(m => {
+    if (m.user_profiles && m.user_profiles.length > 0) {
+      return m.user_profiles[0].role !== 'super_admin'
+    }
+    return true
+  }) || []
+
   // Radar des Absents : Récupérer le dernier pointage
   const { data: lastAttendance } = await supabase
     .from('attendances')
@@ -44,21 +59,49 @@ export default async function ChurchDashboard() {
     presentCount = presentMembers?.length || 0
     const presentIds = presentMembers?.map(p => p.member_id) || []
 
-    const { data: allMembers } = await supabase
-      .from('members')
-      .select('id, first_name, last_name, phone, quartier')
-      .eq('church_id', profile.church_id)
-
     absentees = (allMembers || []).filter(m => !presentIds.includes(m.id))
   }
 
-  // Nombre de quartiers/groupes distincts
-  const { data: quartiersData } = await supabase
-    .from('members')
-    .select('quartier')
+  // Fetch active announcement
+  const { data: activeAnnouncement } = await supabase
+    .from('church_announcements')
+    .select('*')
     .eq('church_id', profile.church_id)
-    .not('quartier', 'is', null)
-  const quartiersCount = new Set(quartiersData?.map(m => m.quartier).filter(Boolean)).size
+    .eq('is_active', true)
+    .single()
+
+  // Calcul des anniversaires
+  const today = new Date()
+  const currentMonth = today.getMonth() // 0-11
+  const currentDate = today.getDate()
+
+  const todaysBirthdays: any[] = []
+  const monthsBirthdays: any[] = []
+
+  if (allMembers) {
+    allMembers.forEach(m => {
+      if (m.birth_date) {
+        // bDate est au format YYYY-MM-DD
+        const parts = m.birth_date.split('-')
+        if (parts.length === 3) {
+          const year = parseInt(parts[0], 10)
+          const month = parseInt(parts[1], 10) - 1
+          const day = parseInt(parts[2], 10)
+          
+          const ageTurning = today.getFullYear() - year
+
+          if (month === currentMonth && day === currentDate) {
+            todaysBirthdays.push({ ...m, ageTurning })
+          } else if (month === currentMonth) {
+            monthsBirthdays.push({ ...m, day })
+          }
+        }
+      }
+    })
+  }
+
+  // Nombre de quartiers/groupes distincts
+  const quartiersCount = new Set((allMembers || []).map(m => m.quartier).filter(Boolean)).size
 
   // Visites planifiées
   const { count: visitsCount } = await supabase
@@ -117,15 +160,74 @@ export default async function ChurchDashboard() {
           {lastAttendance && <p className="text-xs text-gray-400 mt-1">le {lastAttendance.date}</p>}
         </div>
         <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md border-t-4 border-blue-500">
-          <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Quartiers / Cellules</h3>
-          <p className="text-4xl font-bold mt-2 text-primary-900 dark:text-neutral-50">{quartiersCount}</p>
+          <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Absents à suivre</h3>
+          <p className="text-4xl font-bold mt-2 text-blue-900 dark:text-blue-500">{absentees.length}</p>
         </div>
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md border-t-4 border-orange-500">
-          <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Visites Planifiées</h3>
-          <p className="text-4xl font-bold mt-2 text-orange-600 dark:text-orange-400">{visitsCount || 0}</p>
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md border-t-4 border-purple-500">
+          <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Anniversaires (Ce mois)</h3>
+          <p className="text-4xl font-bold mt-2 text-purple-900 dark:text-purple-500">{monthsBirthdays.length}</p>
         </div>
       </div>
+
+      <div className="mb-8">
+        <AnnouncementEditor initialAnnouncement={activeAnnouncement} />
+      </div>
+
+      <div className="mb-8">
+        <GrowthChart dates={allMembers?.map(m => m.created_at).filter(Boolean) || []} />
+      </div>
       
+      {/* SECTION ANNIVERSAIRES */}
+      {todaysBirthdays.length > 0 && (
+        <div className="mb-10 bg-yellow-50/50 dark:bg-yellow-950/10 border border-yellow-200 dark:border-yellow-900/30 rounded-xl p-6 shadow-sm animate-fade-in">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2.5 bg-yellow-100 dark:bg-yellow-900/50 rounded-full text-yellow-600 dark:text-yellow-400 text-2xl">
+              🎉
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-yellow-800 dark:text-yellow-400 font-serif">Anniversaire(s) du jour !</h2>
+              <p className="text-sm text-yellow-600 dark:text-yellow-300">
+                Souhaitons un joyeux anniversaire à nos membres aujourd'hui !
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {todaysBirthdays.map(m => (
+              <div key={m.id} className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-yellow-100 dark:border-yellow-900/50 shadow-sm flex items-center gap-3">
+                {m.photo_url ? (
+                  <img src={m.photo_url} alt="" className="w-12 h-12 rounded-full object-cover border border-yellow-500 flex-shrink-0" />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center font-bold text-yellow-850 dark:text-yellow-350 text-lg flex-shrink-0">
+                    {m.first_name[0]}{m.last_name[0]}
+                  </div>
+                )}
+                <div>
+                  <h4 className="font-bold text-gray-900 dark:text-white leading-tight">{m.first_name} {m.last_name}</h4>
+                  <p className="text-xs text-gray-500 mt-1">Fête ses <span className="font-bold text-yellow-600">{m.ageTurning} ans</span> aujourd'hui !</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {monthsBirthdays.length > 0 && (
+        <div className="mb-10 bg-blue-50/20 dark:bg-slate-800/20 border border-gray-150 dark:border-slate-700 rounded-xl p-6 shadow-sm">
+          <h3 className="text-lg font-serif font-bold text-primary-900 dark:text-gold-400 mb-4 flex items-center gap-2">
+            🎂 Anniversaires de ce mois-ci ({new Date().toLocaleString('fr-FR', { month: 'long' })})
+          </h3>
+          <div className="flex flex-wrap gap-3">
+            {monthsBirthdays.map(m => (
+              <div key={m.id} className="bg-white dark:bg-slate-850 px-4 py-2.5 rounded-lg border border-gray-150 dark:border-slate-700 flex items-center gap-2 text-sm shadow-sm">
+                <span>🎁</span>
+                <span className="font-bold text-gray-800 dark:text-white">{m.first_name} {m.last_name}</span>
+                <span className="text-gray-400 text-xs font-bold bg-gray-100 dark:bg-slate-750 px-2 py-0.5 rounded-md">Le {m.day}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* SECTION RADAR DES ABSENTS */}
       {lastAttendance && (
         <div className="mb-10 bg-red-50/50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 rounded-xl p-6 shadow-sm">

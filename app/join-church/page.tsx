@@ -40,14 +40,27 @@ export default async function JoinChurch(props: { searchParams: Promise<{ error?
       redirect('/join-church?error=Code invalide ou église introuvable')
     }
 
-    // 2. Mettre à jour le profil
+    // 2. Vérifier s'il y a déjà un Pasteur (church_admin) pour cette église
+    const { data: existingAdmins, error: countError } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('church_id', church.id)
+      .eq('role', 'church_admin')
+
+    const hasAdmin = existingAdmins && existingAdmins.length > 0
+    const roleToAssign = hasAdmin ? 'member' : 'church_admin'
+
+    // 3. Mettre à jour le profil
     const { error: updateError } = await supabase
       .from('user_profiles')
-      .update({ church_id: church.id })
+      .update({ 
+        church_id: church.id,
+        role: roleToAssign
+      })
       .eq('id', user.id)
 
     if (updateError) {
-      redirect('/join-church?error=Erreur lors de l\'association')
+      redirect('/join-church?error=Erreur lors de l\'association: ' + updateError.message)
     }
 
     redirect('/dashboard')

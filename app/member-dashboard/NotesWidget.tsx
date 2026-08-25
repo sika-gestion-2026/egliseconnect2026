@@ -16,13 +16,13 @@ type Note = {
   created_at: string
 }
 
-export default function NotesWidget({ initialNotes }: { initialNotes: Note[] }) {
+export default function NotesWidget({ initialNotes, defaultTitle = '' }: { initialNotes: Note[], defaultTitle?: string }) {
   const [notes, setNotes] = useState<Note[]>(initialNotes)
   const [isCreating, setIsCreating] = useState(false)
   const [loading, setLoading] = useState(false)
 
   // Editor states
-  const [title, setTitle] = useState('')
+  const [title, setTitle] = useState(defaultTitle)
   const [content, setContent] = useState('')
   const [verses, setVerses] = useState<Verse[]>([])
 

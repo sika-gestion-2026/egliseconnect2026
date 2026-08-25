@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import GrowthChart from './GrowthChart'
 import AnnouncementEditor from './AnnouncementEditor'
+import RealTimeClock from '../components/RealTimeClock'
 
 export default async function ChurchDashboard() {
   const cookieStore = await cookies()
@@ -113,8 +114,8 @@ export default async function ChurchDashboard() {
   return (
     <div className="max-w-6xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-10 p-8 bg-white dark:bg-slate-800 rounded-xl shadow-sm border-t-4 border-primary-900">
-        <div className="flex flex-col md:flex-row md:items-center gap-6">
-          <div>
+        <div className="flex flex-col md:flex-row md:items-start gap-6 flex-1">
+          <div className="flex-1">
             <h1 className="text-4xl font-serif text-primary-900 dark:text-gold-400 font-bold mb-2">{church?.name || 'Tableau de Bord'}</h1>
             <p className="text-gray-500 flex items-center gap-2 flex-wrap">
               <span className="bg-primary-100 text-primary-900 dark:bg-primary-900/30 dark:text-primary-200 px-3 py-1 rounded-md text-sm font-mono font-bold tracking-widest shadow-sm">
@@ -128,25 +129,29 @@ export default async function ChurchDashboard() {
               </p>
             )}
           </div>
+          
+          {(church?.leader_name || church?.leader_contact) && (
+            <div className="bg-gray-50 dark:bg-slate-900 p-5 rounded-lg border border-gray-200 dark:border-slate-700 min-w-[250px] shadow-sm">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Responsabilité Pastorale</h3>
+              {church?.leader_name && (
+                <p className="font-serif text-lg font-bold text-primary-900 dark:text-gold-400 flex items-center gap-2 mb-1">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                  {church.leader_name}
+                </p>
+              )}
+              {church?.leader_contact && (
+                <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                  {church.leader_contact}
+                </p>
+              )}
+            </div>
+          )}
         </div>
-        
-        {(church?.leader_name || church?.leader_contact) && (
-          <div className="bg-gray-50 dark:bg-slate-900 p-5 rounded-lg border border-gray-200 dark:border-slate-700 min-w-[250px] shadow-sm">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Responsabilité Pastorale</h3>
-            {church?.leader_name && (
-              <p className="font-serif text-lg font-bold text-primary-900 dark:text-gold-400 flex items-center gap-2 mb-1">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                {church.leader_name}
-              </p>
-            )}
-            {church?.leader_contact && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                {church.leader_contact}
-              </p>
-            )}
-          </div>
-        )}
+
+        <div className="shrink-0 flex flex-col items-end gap-3">
+          <RealTimeClock />
+        </div>
       </div>
       
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">

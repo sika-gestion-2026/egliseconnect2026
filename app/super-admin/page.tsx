@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { cookies } from 'next/headers'
 import ChurchesTable from './ChurchesTable'
+import RealTimeClock from '../components/RealTimeClock'
 
 export default async function SuperAdminDashboard() {
   const cookieStore = await cookies()
@@ -30,7 +31,10 @@ export default async function SuperAdminDashboard() {
         </form>
       </header>
       <main className="p-8 max-w-7xl mx-auto">
-        <h2 className="text-3xl font-serif mb-8">Tableau de Bord Global</h2>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+          <h2 className="text-3xl font-serif">Tableau de Bord Global</h2>
+          <RealTimeClock />
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md border-t-4 border-gold-500">
             <h3 className="text-lg font-medium text-gray-600 dark:text-gray-300">Total Églises</h3>

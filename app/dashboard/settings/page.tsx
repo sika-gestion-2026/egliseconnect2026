@@ -71,7 +71,13 @@ export default async function SettingsPage() {
       </div>
 
       <form action={updateChurch} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border-t-4 border-primary-900 p-8 space-y-6">
-        <PhotoUploadPreview name="logo_file" defaultPhotoUrl={church?.logo_url} fallbackIcon="⛪" />
+        <PhotoUploadPreview 
+          name="logo_file" 
+          defaultPhotoUrl={church?.logo_url} 
+          fallbackIcon="⛪" 
+          title="Logo de l'église"
+          description="Ajoutez le logo de l'église. Vous pouvez le prendre en photo si besoin !"
+        />
 
         <h2 className="text-xl font-bold text-primary-900 dark:text-gold-400 pb-2 border-b dark:border-slate-700">Informations Générales</h2>
 

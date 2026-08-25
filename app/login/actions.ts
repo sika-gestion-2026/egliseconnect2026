@@ -18,26 +18,43 @@ export async function login(formData: FormData) {
   })
 
   if (error) {
-    redirect(`/login?error=${encodeURIComponent(error.message)}`)
+    return { error: error.message }
   }
 
   // Check role and redirect
   const { data: { user } } = await supabase.auth.getUser()
   if (user) {
-    const { data: profile } = await supabase.from('user_profiles').select('role, church_id').eq('id', user.id).single()
+    const { data: profile } = await supabase.from('user_profiles').select('role, church_id, first_name, last_name, avatar_url').eq('id', user.id).single()
+    
+    let churchLogo = ''
+    if (profile?.church_id) {
+       const { data: c } = await supabase.from('churches').select('logo_url').eq('id', profile.church_id).single()
+       churchLogo = c?.logo_url || ''
+    }
     
     revalidatePath('/', 'layout')
     
+    let redirectUrl = '/member-dashboard'
     if (profile?.role === 'super_admin') {
-      redirect('/super-admin')
+      redirectUrl = '/super-admin'
     } else if (!profile?.church_id) {
-      redirect('/join-church')
+      redirectUrl = '/join-church'
     } else if (profile?.role === 'church_admin') {
-      redirect('/dashboard')
-    } else {
-      redirect('/member-dashboard')
+      redirectUrl = '/dashboard'
+    }
+
+    return { 
+      success: true, 
+      redirectUrl, 
+      profile: {
+        first_name: profile?.first_name || '',
+        last_name: profile?.last_name || '',
+        photo_url: profile?.avatar_url || '',
+        church_logo: churchLogo
+      }
     }
   }
+  return { error: 'Une erreur est survenue lors de la récupération du profil.' }
 }
 
 export async function signup(formData: FormData) {

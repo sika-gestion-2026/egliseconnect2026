@@ -30,7 +30,7 @@ export async function memberLoginAction(formData: FormData) {
   // ce qui permet de comparer les numéros de téléphone de façon plus souple (avec ou sans espaces).
   const { data: members, error } = await supabase
     .from('members')
-    .select('id, phone, email')
+    .select('id, phone, email, first_name, last_name, photo_url')
     .eq('church_id', church.id)
 
   if (error || !members || members.length === 0) {
@@ -70,5 +70,14 @@ export async function memberLoginAction(formData: FormData) {
     path: '/'
   })
 
-  return { success: true }
+  // 4. Récupérer les infos pour le profile mémorisé
+  const { data: churchData } = await supabase.from('churches').select('logo_url').eq('id', church.id).single()
+  const profileInfo = {
+    first_name: matchedMember.first_name || '',
+    last_name: matchedMember.last_name || '',
+    photo_url: matchedMember.photo_url || '',
+    church_logo: churchData?.logo_url || ''
+  }
+
+  return { success: true, profile: profileInfo }
 }

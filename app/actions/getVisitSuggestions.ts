@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { cookies } from 'next/headers'
+import { getTodayLocalDateString } from '@/utils/date'
 
 export type VisitSuggestion = {
   member_id: string
@@ -34,7 +35,7 @@ export async function getVisitSuggestionsAction(): Promise<{ data?: VisitSuggest
     .select('id, service_date')
     .eq('church_id', profile.church_id)
     .gte('service_date', thirtyDaysAgo.toISOString().split('T')[0])
-    .lte('service_date', new Date().toISOString().split('T')[0])
+    .lte('service_date', getTodayLocalDateString())
     .order('service_date', { ascending: false })
     
   if (!recentServices || recentServices.length === 0) {

@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import Link from 'next/link'
+import { useRouter, usePathname } from 'next/navigation'
 
 interface Member {
   id: string
@@ -19,17 +20,62 @@ interface Member {
   created_at?: string
 }
 
-export default function DirectoryClient({ initialMembers }: { initialMembers: Member[] }) {
-  const [members] = useState<Member[]>(initialMembers)
-  const [groupBy, setGroupBy] = useState<'quartier' | 'status' | 'function'>('quartier')
-  const [searchQuery, setSearchQuery] = useState('')
+export default function DirectoryClient({ 
+  initialMembers, 
+  currentPage = 1,
+  totalPages = 1,
+  initialQuery = '',
+  initialGroup = 'quartier'
+}: { 
+  initialMembers: Member[],
+  currentPage?: number,
+  totalPages?: number,
+  initialQuery?: string,
+  initialGroup?: string
+}) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const [isPending, startTransition] = useTransition()
 
-  // Filtrer les membres par la barre de recherche (recherche par nom, prénom ou téléphone)
-  const filteredMembers = members.filter(m => {
-    const fullName = `${m.first_name} ${m.last_name}`.toLowerCase()
-    const query = searchQuery.toLowerCase()
-    return fullName.includes(query) || (m.phone && m.phone.includes(query))
-  })
+  const [members, setMembers] = useState<Member[]>(initialMembers)
+  const [groupBy, setGroupBy] = useState<'quartier' | 'status' | 'function'>(initialGroup as any)
+  const [searchQuery, setSearchQuery] = useState(initialQuery)
+
+  // Trigger search on the server
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const term = e.target.value
+    setSearchQuery(term)
+    
+    startTransition(() => {
+      const params = new URLSearchParams()
+      if (term) params.set('query', term)
+      params.set('group', groupBy)
+      router.push(`${pathname}?${params.toString()}`)
+    })
+  }
+
+  const handleGroupChange = (group: 'quartier' | 'status' | 'function') => {
+    setGroupBy(group)
+    startTransition(() => {
+      const params = new URLSearchParams()
+      if (searchQuery) params.set('query', searchQuery)
+      params.set('group', group)
+      router.push(`${pathname}?${params.toString()}`)
+    })
+  }
+
+  const goToPage = (page: number) => {
+    startTransition(() => {
+      const params = new URLSearchParams()
+      if (searchQuery) params.set('query', searchQuery)
+      params.set('group', groupBy)
+      params.set('page', page.toString())
+      router.push(`${pathname}?${params.toString()}`)
+    })
+  }
+
+  // We filter the local 'initialMembers' into grouped categories
+  const filteredMembers = initialMembers
 
   // Traduction des statuts pour un affichage lisible
   const getStatusLabel = (status: string) => {
@@ -96,6 +142,8 @@ export default function DirectoryClient({ initialMembers }: { initialMembers: Me
   const grouped = getGroupedMembers()
   const sortedGroupKeys = Object.keys(grouped).sort()
 
+
+
   return (
     <div className="space-y-6">
       
@@ -112,17 +160,18 @@ export default function DirectoryClient({ initialMembers }: { initialMembers: Me
               type="text"
               placeholder="Rechercher par nom, prénom ou téléphone..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-700 text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+              onChange={handleSearch}
+              className={`w-full pl-10 pr-4 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-700 text-sm focus:ring-2 focus:ring-primary-500 outline-none ${isPending ? 'opacity-50' : ''}`}
             />
           </div>
 
-          {/* Sélections de classement */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col md:flex-row items-end md:items-center gap-4">
+            {/* Sélections de classement */}
+            <div className="flex items-center gap-2">
             <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Classer par :</span>
             <div className="flex bg-gray-100 dark:bg-slate-900 p-1 rounded-lg border dark:border-slate-700">
               <button
-                onClick={() => setGroupBy('quartier')}
+                onClick={() => handleGroupChange('quartier')}
                 className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
                   groupBy === 'quartier'
                     ? 'bg-primary-900 text-white shadow-sm'
@@ -132,7 +181,7 @@ export default function DirectoryClient({ initialMembers }: { initialMembers: Me
                 🏘️ Quartier
               </button>
               <button
-                onClick={() => setGroupBy('status')}
+                onClick={() => handleGroupChange('status')}
                 className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
                   groupBy === 'status'
                     ? 'bg-primary-900 text-white shadow-sm'
@@ -142,7 +191,7 @@ export default function DirectoryClient({ initialMembers }: { initialMembers: Me
                 🏷️ Statut
               </button>
               <button
-                onClick={() => setGroupBy('function')}
+                onClick={() => handleGroupChange('function')}
                 className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
                   groupBy === 'function'
                     ? 'bg-primary-900 text-white shadow-sm'
@@ -152,6 +201,7 @@ export default function DirectoryClient({ initialMembers }: { initialMembers: Me
                 🛠️ Département
               </button>
             </div>
+          </div>
           </div>
 
         </div>
@@ -247,6 +297,25 @@ export default function DirectoryClient({ initialMembers }: { initialMembers: Me
                             >
                               📞 Appeler
                             </button>
+                            <Link 
+                              href={`/dashboard/visits`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="flex items-center justify-center gap-2 w-full py-1.5 mt-2 bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:hover:bg-amber-900/40 dark:text-amber-400 rounded-md transition-colors text-xs font-bold border border-amber-200 dark:border-amber-800"
+                            >
+                              ✝️ Visite
+                            </Link>
+                          </div>
+                        )}
+                        
+                        {!member.phone && (
+                          <div className="pt-3 mt-2 border-t dark:border-slate-750">
+                            <Link 
+                              href={`/dashboard/visits`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="flex items-center justify-center gap-2 w-full py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:hover:bg-amber-900/40 dark:text-amber-400 rounded-md transition-colors text-xs font-bold border border-amber-200 dark:border-amber-800"
+                            >
+                              ✝️ Demander une Visite
+                            </Link>
                           </div>
                         )}
                       </div>
@@ -259,6 +328,29 @@ export default function DirectoryClient({ initialMembers }: { initialMembers: Me
           ))
         )}
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-4 mt-8">
+          <button 
+            disabled={currentPage <= 1 || isPending}
+            onClick={() => goToPage(currentPage - 1)}
+            className="px-4 py-2 border rounded-md text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-slate-700 dark:hover:bg-slate-800"
+          >
+            Précédent
+          </button>
+          <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+            Page {currentPage} sur {totalPages}
+          </span>
+          <button 
+            disabled={currentPage >= totalPages || isPending}
+            onClick={() => goToPage(currentPage + 1)}
+            className="px-4 py-2 border rounded-md text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-slate-700 dark:hover:bg-slate-800"
+          >
+            Suivant
+          </button>
+        </div>
+      )}
 
     </div>
   )

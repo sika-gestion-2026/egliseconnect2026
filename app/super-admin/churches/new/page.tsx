@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import LocationPicker from '@/components/LocationPicker'
 
 // Fonction utilitaire pour générer un code aléatoire à 5 caractères
 function generateCode() {
@@ -33,7 +34,9 @@ export default async function NewChurch() {
     const quartier = formData.get('quartier') as string
     const vision = formData.get('vision') as string
     const leaderName = formData.get('leader_name') as string
-    const leaderContact = formData.get('leader_contact') as string
+    const leaderPhone = formData.get('leader_phone') as string
+    const leaderEmail = formData.get('leader_email') as string
+    const leaderContact = [leaderPhone, leaderEmail].filter(Boolean).join(' | ')
     
     let finalLogoUrl = null
     const logoFile = formData.get('logo_file') as File
@@ -63,7 +66,9 @@ export default async function NewChurch() {
       vision,
       logo_url: finalLogoUrl,
       leader_name: leaderName,
-      leader_contact: leaderContact
+      leader_contact: leaderContact,
+      latitude: formData.get('latitude') ? parseFloat(formData.get('latitude') as string) : null,
+      longitude: formData.get('longitude') ? parseFloat(formData.get('longitude') as string) : null
     })
     
     if (!error) {
@@ -110,20 +115,27 @@ export default async function NewChurch() {
         </div>
         
         <h3 className="font-serif text-lg border-b pb-2 mb-4 dark:border-slate-700">Responsabilité Pastorale</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div>
             <label className="block text-sm font-medium mb-2 flex items-center gap-2">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-              Nom du Responsable (Pasteur)
+              Responsable (Pasteur)
             </label>
             <input name="leader_name" type="text" className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-700" placeholder="Ex: Pasteur Paul" />
           </div>
           <div>
             <label className="block text-sm font-medium mb-2 flex items-center gap-2">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-              Contact (Téléphone ou Email)
+              Téléphone
             </label>
-            <input name="leader_contact" type="text" className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-700" placeholder="Ex: +243 81... ou email@..." />
+            <input name="leader_phone" type="tel" className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-700" placeholder="Ex: +243 81..." />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2 flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+              Adresse Email
+            </label>
+            <input name="leader_email" type="email" className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-700" placeholder="Ex: pasteur@eglise.com" />
           </div>
         </div>
 
@@ -141,6 +153,11 @@ export default async function NewChurch() {
             <label className="block text-sm font-medium mb-2">Quartier</label>
             <input name="quartier" type="text" className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-700" placeholder="Ex: Socimat" />
           </div>
+        </div>
+
+        <h3 className="font-serif text-lg border-b pb-2 mb-4 dark:border-slate-700">Position sur la carte</h3>
+        <div className="mb-8">
+          <LocationPicker />
         </div>
         
         <div className="flex justify-end gap-4 mt-10">

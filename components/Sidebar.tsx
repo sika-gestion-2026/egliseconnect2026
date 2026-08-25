@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { ThemeToggle } from '@/components/ThemeToggle'
 
 type NavItem = {
   name: string
@@ -38,9 +39,12 @@ export default function Sidebar({
           )}
           <span className="truncate">{churchName}</span>
         </h2>
-        <button onClick={() => setIsOpen(!isOpen)} className="p-2 bg-primary-800 rounded-md">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-        </button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <button onClick={() => setIsOpen(!isOpen)} className="p-2 bg-primary-800 rounded-md">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          </button>
+        </div>
       </div>
 
       {/* Overlay */}
@@ -97,7 +101,11 @@ export default function Sidebar({
             )
           })}
         </nav>
-        <div className="p-4 border-t border-primary-500">
+        <div className="p-4 border-t border-primary-500 space-y-2">
+          <div className="flex justify-between items-center px-4 py-2">
+            <span className="text-sm font-medium">Thème visuel</span>
+            <ThemeToggle />
+          </div>
           <form action="/auth/signout" method="post">
             <button className="w-full text-left px-4 py-3 text-sm font-bold text-red-300 hover:text-red-100 hover:bg-primary-800 rounded-md transition-colors flex items-center gap-2">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>

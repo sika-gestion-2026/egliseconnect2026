@@ -4,6 +4,8 @@ import { useState } from 'react'
 import RSVPWidget from './RSVPWidget'
 import NotesWidget from './NotesWidget'
 import DepartmentLeaderWidget from './DepartmentLeaderWidget'
+import PrayerWall from './PrayerWall'
+import { QRCodeSVG } from 'qrcode.react'
 
 type MemberDashboardClientProps = {
   church: any
@@ -37,7 +39,7 @@ function getRemainingTime(createdAt: string) {
 }
 
 export default function MemberDashboardClient({ church, memberData, nextService, currentRsvp, initialNotes, activeAnnouncement, ledDepartments, stats, birthdaysToday, locationMembers, departmentMembers, championOfMonth, championOfYear }: MemberDashboardClientProps) {
-  const [activeTab, setActiveTab] = useState<'home' | 'notes' | 'departement' | 'communaute'>('home')
+  const [activeTab, setActiveTab] = useState<'home' | 'notes' | 'departement' | 'communaute' | 'qrcode'>('home')
 
   const today = new Date()
   const jours = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
@@ -50,30 +52,36 @@ export default function MemberDashboardClient({ church, memberData, nextService,
   return (
     <>
       {/* Tabs */}
-      <div className="flex bg-white dark:bg-slate-800 rounded-xl p-1 mb-6 shadow-sm border border-gray-100 dark:border-slate-700">
+      <div className="flex overflow-x-auto hide-scrollbar bg-white dark:bg-slate-800 rounded-xl p-1 mb-6 shadow-sm border border-gray-100 dark:border-slate-700">
         <button 
           onClick={() => setActiveTab('home')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium text-sm transition-colors ${activeTab === 'home' ? 'bg-primary-50 text-primary-900 dark:bg-slate-700 dark:text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-750'}`}
+          className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 py-3 px-2 rounded-lg font-medium text-sm transition-colors ${activeTab === 'home' ? 'bg-primary-50 text-primary-900 dark:bg-slate-700 dark:text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-750'}`}
         >
           <span>🏠</span> Accueil
         </button>
         <button 
           onClick={() => setActiveTab('notes')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium text-sm transition-colors ${activeTab === 'notes' ? 'bg-primary-50 text-primary-900 dark:bg-slate-700 dark:text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-750'}`}
+          className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 py-3 px-2 rounded-lg font-medium text-sm transition-colors ${activeTab === 'notes' ? 'bg-primary-50 text-primary-900 dark:bg-slate-700 dark:text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-750'}`}
         >
           <span>📖</span> Mes Notes
         </button>
         <button 
           onClick={() => setActiveTab('communaute')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium text-sm transition-colors ${activeTab === 'communaute' ? 'bg-primary-50 text-primary-900 dark:bg-slate-700 dark:text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-750'}`}
+          className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 py-3 px-2 rounded-lg font-medium text-sm transition-colors ${activeTab === 'communaute' ? 'bg-primary-50 text-primary-900 dark:bg-slate-700 dark:text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-750'}`}
         >
           <span>🤝</span> Communauté
+        </button>
+        <button 
+          onClick={() => setActiveTab('qrcode')}
+          className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 py-3 px-2 rounded-lg font-medium text-sm transition-colors ${activeTab === 'qrcode' ? 'bg-primary-50 text-primary-900 dark:bg-slate-700 dark:text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-750'}`}
+        >
+          <span>📱</span> QR Code
         </button>
         
         {ledDepartments && ledDepartments.length > 0 && (
           <button 
             onClick={() => setActiveTab('departement')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium text-sm transition-colors ${activeTab === 'departement' ? 'bg-gold-50 text-gold-900 dark:bg-gold-900/30 dark:text-gold-400 shadow-sm' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-750'}`}
+            className={`flex-1 min-w-[150px] flex items-center justify-center gap-2 py-3 px-2 rounded-lg font-medium text-sm transition-colors ${activeTab === 'departement' ? 'bg-gold-50 text-gold-900 dark:bg-gold-900/30 dark:text-gold-400 shadow-sm' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-750'}`}
           >
             <span>👑</span> Mon Département
           </button>
@@ -86,9 +94,15 @@ export default function MemberDashboardClient({ church, memberData, nextService,
             <h1 className="text-3xl font-serif text-gray-900 dark:text-white mb-2">
               Espace Membre
             </h1>
-            <p className="text-gray-500 dark:text-gray-400 mb-8">
+            <p className="text-gray-500 dark:text-gray-400 mb-6">
               Bienvenue dans votre espace personnel de l'église <strong className="text-green-600 dark:text-green-400">{church?.name}</strong>.
             </p>
+
+            <div className="mb-8">
+              <a href="/localisation" className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-lg font-bold shadow-md transition-colors">
+                <span>📍</span> M'y rendre (Calcul d'itinéraire)
+              </a>
+            </div>
 
             {birthdaysToday && birthdaysToday.length > 0 && (
               <div className="mb-8 bg-gradient-to-r from-pink-500 to-rose-500 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden animate-in zoom-in">
@@ -246,6 +260,11 @@ export default function MemberDashboardClient({ church, memberData, nextService,
                 )}
               </div>
 
+              {/* Mur de prière */}
+              <div className="md:col-span-2">
+                <PrayerWall />
+              </div>
+
               <div className="bg-blue-50 dark:bg-blue-900/10 p-6 rounded-xl border border-blue-100 dark:border-blue-900/30">
                 <h2 className="text-xl font-bold text-blue-800 dark:text-blue-400 mb-4">Prochains Événements</h2>
                 <div className="text-sm text-gray-700 dark:text-gray-300">
@@ -324,6 +343,50 @@ export default function MemberDashboardClient({ church, memberData, nextService,
               <p className="text-sm text-gray-500 italic bg-gray-50 p-4 rounded-lg">Aucun membre enregistré dans votre zone pour le moment.</p>
             )}
           </div>
+        </div>
+      ) : activeTab === 'qrcode' ? (
+        <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 animate-in fade-in slide-in-from-bottom-4 duration-300 flex flex-col items-center justify-center text-center">
+          <h2 className="text-3xl font-serif text-primary-900 dark:text-gold-400 font-bold mb-2">
+            Carte de Membre Numérique
+          </h2>
+          <p className="text-gray-500 dark:text-gray-400 mb-10 max-w-md">
+            Présentez ce QR Code à l'équipe d'accueil à l'entrée de l'église pour valider votre présence instantanément.
+          </p>
+          
+          <div className="bg-white p-6 rounded-3xl shadow-lg border-4 border-primary-100 dark:border-primary-900/30 relative">
+            <div className="absolute -top-4 -left-4 w-8 h-8 border-t-4 border-l-4 border-primary-500 rounded-tl-xl"></div>
+            <div className="absolute -top-4 -right-4 w-8 h-8 border-t-4 border-r-4 border-primary-500 rounded-tr-xl"></div>
+            <div className="absolute -bottom-4 -left-4 w-8 h-8 border-b-4 border-l-4 border-primary-500 rounded-bl-xl"></div>
+            <div className="absolute -bottom-4 -right-4 w-8 h-8 border-b-4 border-r-4 border-primary-500 rounded-br-xl"></div>
+            
+            {memberData ? (
+              <QRCodeSVG 
+                value={memberData.id}
+                size={250}
+                bgColor={"#ffffff"}
+                fgColor={"#0f172a"}
+                level={"H"}
+                includeMargin={false}
+                imageSettings={church?.logo_url ? {
+                  src: church.logo_url,
+                  x: undefined,
+                  y: undefined,
+                  height: 50,
+                  width: 50,
+                  excavate: true,
+                } : undefined}
+              />
+            ) : (
+              <div className="w-[250px] h-[250px] bg-gray-100 flex items-center justify-center text-gray-400 font-bold p-4">
+                Aucun profil lié
+              </div>
+            )}
+          </div>
+          
+          <p className="mt-8 text-xl font-bold text-gray-800 dark:text-white">
+            {memberData ? `${memberData.first_name} ${memberData.last_name}` : 'Utilisateur Inconnu'}
+          </p>
+          <p className="text-sm font-mono text-gray-400 mt-2">ID: {memberData?.id ? memberData.id.split('-')[0] : 'N/A'}</p>
         </div>
       ) : (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">

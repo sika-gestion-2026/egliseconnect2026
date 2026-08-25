@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import GrowthChart from './GrowthChart'
+import QuartierChart from './QuartierChart'
 import AnnouncementEditor from './AnnouncementEditor'
 import RealTimeClock from '../components/RealTimeClock'
 
@@ -14,10 +15,14 @@ export default async function ChurchDashboard() {
     redirect('/login')
   }
 
-  const { data: profile } = await supabase.from('user_profiles').select('church_id').eq('id', user.id).single()
+  const { data: profile } = await supabase.from('user_profiles').select('church_id, role').eq('id', user.id).single()
   
   if (!profile?.church_id) {
     redirect('/join-church')
+  }
+
+  if (profile.role === 'scanner') {
+    redirect('/dashboard/scanner')
   }
 
   const { data: church } = await supabase.from('churches').select('*').eq('id', profile.church_id).single()
@@ -178,8 +183,13 @@ export default async function ChurchDashboard() {
         <AnnouncementEditor initialAnnouncement={activeAnnouncement} />
       </div>
 
-      <div className="mb-8">
-        <GrowthChart dates={allMembers?.map(m => m.created_at).filter(Boolean) || []} />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="lg:col-span-2">
+          <GrowthChart dates={allMembers?.map(m => m.created_at).filter(Boolean) || []} />
+        </div>
+        <div className="lg:col-span-1">
+          <QuartierChart members={allMembers} />
+        </div>
       </div>
       
       {/* SECTION ANNIVERSAIRES */}

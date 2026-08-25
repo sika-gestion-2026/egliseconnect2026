@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import MemberDashboardClient from "./MemberDashboardClient";
 import RealTimeClock from "../components/RealTimeClock";
+import { getTodayLocalDateString } from "@/utils/date";
 
 export default async function MemberDashboard() {
   const cookieStore = await cookies();
@@ -68,7 +69,7 @@ export default async function MemberDashboard() {
       .from("church_services")
       .select("*")
       .eq("church_id", targetChurchId)
-      .gte("service_date", new Date().toISOString().split("T")[0])
+      .gte("service_date", getTodayLocalDateString())
       .order("service_date", { ascending: true })
       .limit(1);
 
@@ -175,7 +176,7 @@ export default async function MemberDashboard() {
   let championOfYear: any = null;
 
   if (targetChurchId && targetMemberId && memberData) {
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = getTodayLocalDateString();
     const [, currentMonth, currentDay] = todayStr.split("-");
 
     const { data: allMembers } = await supabase
@@ -351,7 +352,12 @@ export default async function MemberDashboard() {
           </div>
 
           <div className="flex flex-col md:items-end gap-3 w-full md:w-auto mt-4 md:mt-0">
-            <RealTimeClock />
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              <a href="/localisation" className="text-xs flex items-center gap-1.5 font-bold text-primary-900 bg-primary-50 hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-100 px-3 py-1.5 rounded-md shadow-sm border border-primary-200 dark:border-primary-800 transition-colors whitespace-nowrap">
+                <span>📍</span> M'y rendre
+              </a>
+              <RealTimeClock />
+            </div>
 
             <form action="/auth/signout" method="post">
               <button className="text-xs font-bold text-red-500 hover:text-white hover:bg-red-500 bg-red-50 dark:bg-red-900/10 px-3 py-1.5 rounded-md shadow-sm border border-red-200 dark:border-red-800 transition-colors">

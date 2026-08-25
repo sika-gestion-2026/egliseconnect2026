@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { revalidatePath } from 'next/cache'
+import DeleteChurchButton from '@/components/DeleteChurchButton'
 
 export default async function ManageChurchPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -105,6 +106,30 @@ export default async function ManageChurchPage(props: { params: Promise<{ id: st
       revalidatePath('/super-admin')
       revalidatePath(`/super-admin/churches/${churchId}`)
       revalidatePath('/dashboard')
+      revalidatePath('/super-admin')
+      redirect('/super-admin')
+    }
+  }
+
+  // 5. Server Action pour supprimer l'église
+  async function deleteChurchAction() {
+    'use server'
+    const cs = await cookies()
+    const sb = createClient(cs)
+
+    // Revérifier les permissions
+    const { data: { user } } = await sb.auth.getUser()
+    const { data: profile } = await sb.from('user_profiles').select('role').eq('id', user?.id).single()
+    
+    // Sécurité maximale : Seul l'email contenant munokolive peut supprimer une église
+    if (profile?.role !== 'super_admin' || !user?.email?.includes('munokolive')) {
+      redirect('/dashboard')
+    }
+
+    const { error } = await sb.from('churches').delete().eq('id', churchId)
+
+    if (!error) {
+      revalidatePath('/super-admin')
       redirect('/super-admin')
     }
   }
@@ -301,6 +326,24 @@ export default async function ManageChurchPage(props: { params: Promise<{ id: st
             </div>
           </div>
 
+        </div>
+
+        {/* Zone Rouge - Suppression */}
+        <div className="mt-12 bg-red-50 dark:bg-red-950/20 rounded-xl shadow-sm border border-red-200 dark:border-red-900/50 p-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div>
+              <h3 className="text-xl font-bold text-red-700 dark:text-red-400 mb-2 flex items-center gap-2">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                Zone de Danger : Suppression de l'Église
+              </h3>
+              <p className="text-sm text-red-600 dark:text-red-300">
+                Attention : la suppression d'une église est <strong>définitive et irréversible</strong>. Cela supprimera également tous les membres, les profils administrateurs locaux et les données de pointage qui y sont attachés.
+              </p>
+            </div>
+            <form action={deleteChurchAction}>
+              <DeleteChurchButton churchName={church.name} />
+            </form>
+          </div>
         </div>
 
       </div>

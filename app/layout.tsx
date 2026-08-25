@@ -3,6 +3,7 @@ import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { SuperAdminOmnibox } from "@/components/SuperAdminOmnibox";
 import ToastProvider from "@/components/ToastProvider";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -26,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" className={`${inter.variable} ${playfair.variable}`}>
+    <html lang="fr" className={`${inter.variable} ${playfair.variable}`} suppressHydrationWarning={true}>
       <head>
         <meta name="application-name" content="Église Connect" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -35,10 +36,12 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="theme-color" content="#1e3a8a" />
       </head>
-      <body className="antialiased">
-        {children}
-        <SuperAdminOmnibox />
-        <ToastProvider />
+      <body className="antialiased dark:bg-background" suppressHydrationWarning={true}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          {children}
+          <SuperAdminOmnibox />
+          <ToastProvider />
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -57,6 +57,20 @@ export default async function NewChurch() {
     
     const code = generateCode()
     
+    let latitude = null
+    const latRaw = formData.get('latitude')
+    if (latRaw && typeof latRaw === 'string' && latRaw.trim() !== '') {
+      const parsedLat = parseFloat(latRaw)
+      if (!isNaN(parsedLat)) latitude = parsedLat
+    }
+
+    let longitude = null
+    const lngRaw = formData.get('longitude')
+    if (lngRaw && typeof lngRaw === 'string' && lngRaw.trim() !== '') {
+      const parsedLng = parseFloat(lngRaw)
+      if (!isNaN(parsedLng)) longitude = parsedLng
+    }
+
     const { error } = await supabase.from('churches').insert({
       name,
       code,
@@ -67,12 +81,14 @@ export default async function NewChurch() {
       logo_url: finalLogoUrl,
       leader_name: leaderName,
       leader_contact: leaderContact,
-      latitude: formData.get('latitude') ? parseFloat(formData.get('latitude') as string) : null,
-      longitude: formData.get('longitude') ? parseFloat(formData.get('longitude') as string) : null
+      latitude,
+      longitude
     })
     
     if (!error) {
       redirect('/super-admin')
+    } else {
+      console.error("Erreur lors de la création de l'église:", error)
     }
   }
 

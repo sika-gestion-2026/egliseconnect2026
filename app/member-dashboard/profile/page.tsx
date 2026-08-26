@@ -1,8 +1,9 @@
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import ProfileForm from "./ProfileForm"; // Fix TS false positive
+import ProfileForm from "./ProfileForm";
 import Link from "next/link";
+import { verifyMemberSession } from "@/utils/memberSession";
 
 export default async function MemberProfilePage() {
   const cookieStore = await cookies();
@@ -13,13 +14,11 @@ export default async function MemberProfilePage() {
   let targetMemberId = null;
 
   if (memberSession) {
-    try {
-      const decoded = JSON.parse(
-        Buffer.from(memberSession, "base64").toString("utf-8"),
-      );
-      targetChurchId = decoded.church_id;
-      targetMemberId = decoded.member_id;
-    } catch (e) {}
+    const session = verifyMemberSession(memberSession);
+    if (session) {
+      targetChurchId = session.church_id;
+      targetMemberId = session.member_id;
+    }
   }
 
   if (!targetChurchId || !targetMemberId) {

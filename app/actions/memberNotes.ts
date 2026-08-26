@@ -3,6 +3,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
+import { verifyMemberSession } from '@/utils/memberSession'
 
 // Helper function to authenticate either via Supabase Auth or Member Session
 async function getAuthenticatedMember() {
@@ -21,18 +22,9 @@ async function getAuthenticatedMember() {
   // Fallback to custom member_session
   const memberSession = cookieStore.get('member_session')?.value
   if (memberSession) {
-    try {
-      const decoded = JSON.parse(Buffer.from(memberSession, 'base64').toString('utf-8'))
-      if (decoded.member_id && decoded.church_id) {
-        // Since custom session bypasses RLS on insert/update without auth.uid, 
-        // we might need to use a service role key.
-        // But for now, since we don't have service role, we will just use the normal client.
-        // Wait, if RLS prevents inserts for unauthenticated users, it will fail!
-        // We will need to temporarily disable RLS for member_notes or write a secure policy.
-        return { member_id: decoded.member_id, church_id: decoded.church_id, supabase }
-      }
-    } catch (e) {
-      // Invalid session
+    const session = verifyMemberSession(memberSession);
+    if (session?.member_id && session?.church_id) {
+      return { member_id: session.member_id, church_id: session.church_id, supabase }
     }
   }
   

@@ -5,6 +5,7 @@ import MemberDashboardClient from "./MemberDashboardClient";
 import RealTimeClock from "@/components/RealTimeClock";
 import { getTodayLocalDateString } from "@/utils/date";
 import { memberLogoutAction } from "@/app/actions/memberLogout";
+import { verifyMemberSession } from "@/utils/memberSession";
 
 export default async function MemberDashboard() {
   const cookieStore = await cookies();
@@ -35,14 +36,10 @@ export default async function MemberDashboard() {
   if (!targetMemberId) {
     const memberSession = cookieStore.get("member_session")?.value;
     if (memberSession) {
-      try {
-        const decoded = JSON.parse(
-          Buffer.from(memberSession, "base64").toString("utf-8"),
-        );
-        targetChurchId = decoded.church_id;
-        targetMemberId = decoded.member_id;
-      } catch (e) {
-        // Invalid session
+      const session = verifyMemberSession(memberSession);
+      if (session) {
+        targetChurchId = session.church_id;
+        targetMemberId = session.member_id;
       }
     }
   }

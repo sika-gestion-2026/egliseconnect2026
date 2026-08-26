@@ -4,6 +4,7 @@ import { createClient } from '@/utils/supabase/server'
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { verifyMemberSession } from '@/utils/memberSession'
 
 export async function updateMemberProfile(formData: FormData) {
   const cookieStore = await cookies()
@@ -16,13 +17,12 @@ export async function updateMemberProfile(formData: FormData) {
   let targetChurchId = null;
   let targetMemberId = null;
   
-  try {
-    const decoded = JSON.parse(Buffer.from(memberSession, 'base64').toString('utf-8'));
-    targetChurchId = decoded.church_id;
-    targetMemberId = decoded.member_id;
-  } catch (e) {
-    return { error: 'Erreur de lecture de la session.' }
+  const session = verifyMemberSession(memberSession);
+  if (!session) {
+    return { error: 'Session invalide ou expirée. Veuillez vous reconnecter.' }
   }
+  targetChurchId = session.church_id;
+  targetMemberId = session.member_id;
   
   if (!targetChurchId || !targetMemberId) {
     return { error: 'Session invalide.' }

@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { cookies } from 'next/headers'
+import { signMemberSession } from '@/utils/memberSession'
 
 export async function memberLoginAction(formData: FormData) {
   const churchCode = formData.get('church_code') as string
@@ -28,13 +29,8 @@ export async function memberLoginAction(formData: FormData) {
     return { error: data.error }
   }
 
-  // 3. Créer une session personnalisée
-  // On stocke l'ID du membre et l'ID de l'église dans un cookie sécurisé
-  const sessionData = JSON.stringify({ member_id: data.member_id, church_id: data.church_id })
-  
-  // Utilisation de btoa/atob basique pour éviter que le JSON soit en clair, 
-  // idéalement on utiliserait un JWT signé, mais pour la démo/simplicité c'est fonctionnel
-  const token = Buffer.from(sessionData).toString('base64')
+  // Create a signed, tamper-proof session token (HMAC-SHA256)
+  const token = signMemberSession({ member_id: data.member_id, church_id: data.church_id })
   
   cookieStore.set('member_session', token, {
     httpOnly: true,

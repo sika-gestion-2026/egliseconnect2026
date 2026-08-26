@@ -31,10 +31,9 @@ export default async function LocalisationPage() {
   if (!targetChurchId) {
     const memberSession = cookieStore.get("member_session")?.value;
     if (memberSession) {
-      try {
-        const decoded = JSON.parse(Buffer.from(memberSession, "base64").toString("utf-8"));
-        targetChurchId = decoded.church_id;
-      } catch (e) {}
+      const { verifyMemberSession } = await import('@/utils/memberSession');
+      const session = verifyMemberSession(memberSession);
+      if (session) targetChurchId = session.church_id;
     }
   }
 

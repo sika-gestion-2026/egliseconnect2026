@@ -64,6 +64,28 @@ export default async function SMSDashboard() {
             <button className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700">Sauvegarder</button>
           </div>
         </div>
+
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border-t-4 border-blue-500 md:col-span-2">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-3xl">📅</span>
+            <h2 className="text-xl font-bold dark:text-white">Rappels de Service (Planning)</h2>
+          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            Envoyez un SMS automatique 24h avant aux membres qui sont de service (Louange, Accueil, etc.).
+          </p>
+          <textarea 
+            className="w-full p-3 rounded-lg border dark:bg-slate-900 dark:border-slate-700 text-sm focus:ring-primary-500" 
+            rows={2}
+            defaultValue="Rappel : Bonjour {prenom}, vous êtes affecté au service ({role}) pour l'événement '{evenement}' demain à {heure}. Merci de confirmer votre présence sur l'application."
+          />
+          <div className="mt-4 flex justify-between items-center">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" className="rounded text-blue-500 focus:ring-blue-500" />
+              <span className="text-sm font-bold dark:text-white">Activer l'envoi 24h avant</span>
+            </label>
+            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700">Sauvegarder</button>
+          </div>
+        </div>
       </div>
 
       <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-900/50 p-6 rounded-2xl">

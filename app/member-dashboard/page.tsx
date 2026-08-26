@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import MemberDashboardClient from "./MemberDashboardClient";
 import RealTimeClock from "@/components/RealTimeClock";
+import NotificationBell from "./NotificationBell";
 import { getTodayLocalDateString } from "@/utils/date";
 import { memberLogoutAction } from "@/app/actions/memberLogout";
 import { verifyMemberSession, signMemberSession, shouldRenewSession, SESSION_MAX_AGE_SECONDS } from "@/utils/memberSession";
@@ -95,6 +96,29 @@ export default async function MemberDashboard() {
         .single();
 
       if (rsvp) currentRsvp = rsvp.status;
+
+      // AUTOMATIC REMINDER: If the service is TODAY, check if a reminder was sent
+      if (nextService.service_date === getTodayLocalDateString()) {
+        const { data: existingReminder } = await supabase
+          .from("notifications")
+          .select("id")
+          .eq("recipient_member_id", targetMemberId)
+          .eq("type", "service_reminder")
+          .eq("related_service_id", nextService.id)
+          .single();
+
+        if (!existingReminder) {
+          // Send automatic reminder
+          await supabase.from("notifications").insert({
+            recipient_member_id: targetMemberId,
+            church_id: targetChurchId,
+            type: "service_reminder",
+            title: `🔥 C'est Aujourd'hui !`,
+            body: `Le culte "${nextService.name}" commence aujourd'hui à ${nextService.service_time?.substring(0,5)}. N'oubliez pas de confirmer votre présence !`,
+            related_service_id: nextService.id
+          });
+        }
+      }
     }
   }
 
@@ -308,6 +332,46 @@ export default async function MemberDashboard() {
   }
   // ------------------------------------------
 
+  let myDepartmentLeaders: any[] = [];
+  if (targetChurchId && myFunctions.length > 0) {
+    // Get the department IDs for the names in myFunctions
+    const { data: depts } = await supabase
+      .from("church_departments")
+      .select("id, name")
+      .eq("church_id", targetChurchId)
+      .in("name", myFunctions);
+      
+    if (depts && depts.length > 0) {
+      const deptIds = depts.map(d => d.id);
+      
+      const { data: leadersData } = await supabase
+        .from("department_leaders")
+        .select("department_id, members(id, first_name, last_name, photo_url, phone)")
+        .in("department_id", deptIds);
+        
+      if (leadersData) {
+        myDepartmentLeaders = leadersData.map(ld => {
+          const dept = depts.find(d => d.id === ld.department_id);
+          return {
+            departmentName: dept?.name,
+            leader: Array.isArray(ld.members) ? ld.members[0] : ld.members
+          };
+        }).filter(item => item.leader);
+      }
+    }
+  }
+
+  let myNotifications: any[] = [];
+  if (targetMemberId) {
+    const { data: notifications } = await supabase
+      .from("notifications")
+      .select("*")
+      .eq("recipient_member_id", targetMemberId)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (notifications) myNotifications = notifications;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-background p-8 relative overflow-hidden">
       {/* White Label Background Logo */}
@@ -368,7 +432,13 @@ export default async function MemberDashboard() {
           </div>
 
           <div className="flex flex-col md:items-end gap-3 w-full md:w-auto mt-4 md:mt-0">
-            <div className="flex items-center gap-3 w-full md:w-auto">
+            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+              <a href="/member-dashboard/planning" className="text-xs flex items-center gap-1.5 font-bold text-white bg-primary-900 hover:bg-primary-800 px-3 py-1.5 rounded-md shadow-sm transition-colors whitespace-nowrap">
+                <span>📅</span> Mon Planning
+              </a>
+              <a href="/member-dashboard/public-planning" className="text-xs flex items-center gap-1.5 font-bold text-white bg-purple-600 hover:bg-purple-700 px-3 py-1.5 rounded-md shadow-sm transition-colors whitespace-nowrap">
+                <span>📋</span> Programme Ouvriers
+              </a>
               <a href="/localisation" className="text-xs flex items-center gap-1.5 font-bold text-primary-900 bg-primary-50 hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-100 px-3 py-1.5 rounded-md shadow-sm border border-primary-200 dark:border-primary-800 transition-colors whitespace-nowrap">
                 <span>📍</span> M'y rendre
               </a>
@@ -376,6 +446,7 @@ export default async function MemberDashboard() {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                 Modifier mon profil
               </a>
+              <NotificationBell notifications={myNotifications} />
               <RealTimeClock />
             </div>
 
@@ -401,6 +472,7 @@ export default async function MemberDashboard() {
           departmentMembers={departmentMembers}
           championOfMonth={championOfMonth}
           championOfYear={championOfYear}
+          myDepartmentLeaders={myDepartmentLeaders}
         />
       </div>
     </div>

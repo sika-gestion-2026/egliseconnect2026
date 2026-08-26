@@ -3,6 +3,7 @@ import { createClient } from '@/utils/supabase/server'
 import { cookies } from 'next/headers'
 import Sidebar from '@/components/Sidebar'
 import { ScannerIcon, DashboardIcon, DirectoryIcon, AttendanceIcon, VisitIcon, LocationIcon, PhoneIcon, SettingsIcon } from '@/components/Icons'
+import { purgeOldServices } from '@/app/actions/maintenance'
 
 interface NavItem {
   name: string
@@ -12,6 +13,9 @@ interface NavItem {
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies()
   const supabase = createClient(cookieStore)
+
+  // Trigger silent purge
+  purgeOldServices().catch(console.error)
 
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -48,6 +52,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     navItems = [
       { name: 'Tableau de bord', href: '/dashboard', icon: dashIcon },
       { name: 'Mon Département', href: '/dashboard/members', icon: dirIcon },
+      { name: 'Planning & Ouvriers', href: '/dashboard/planning', icon: attIcon },
       { name: 'Scanner QR', href: '/dashboard/scanner', icon: scannerIcon }
     ]
   } else if (profile.role === 'moderator') {
@@ -55,6 +60,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       { name: 'Tableau de bord', href: '/dashboard', icon: dashIcon },
       { name: 'Annuaire', href: '/dashboard/members', icon: dirIcon },
       { name: 'Cultes & Pointages', href: '/dashboard/attendance', icon: attIcon },
+      { name: 'Planning & Ouvriers', href: '/dashboard/planning', icon: attIcon },
       { name: 'Scanner QR', href: '/dashboard/scanner', icon: scannerIcon },
       { name: 'Suivi Pastoral & Visites', href: '/dashboard/visits', icon: visitIcon },
       { name: 'Localisation', href: '/localisation', icon: locIcon }
@@ -65,12 +71,21 @@ export default async function DashboardLayout({ children }: { children: React.Re
       { name: 'Tableau de bord', href: '/dashboard', icon: dashIcon },
       { name: 'Annuaire', href: '/dashboard/members', icon: dirIcon },
       { name: 'Cultes & Pointages', href: '/dashboard/attendance', icon: attIcon },
+      { name: 'Planning & Ouvriers', href: '/dashboard/planning', icon: attIcon },
       { name: 'Scanner QR', href: '/dashboard/scanner', icon: scannerIcon },
       { name: 'Suivi Pastoral & Visites', href: '/dashboard/visits', icon: visitIcon },
       { name: 'Localisation', href: '/localisation', icon: locIcon }
     ]
 
     if (profile.role === 'church_admin' || profile.role === 'super_admin') {
+      navItems.push({ 
+        name: 'Flux d\'Édification', 
+        href: '/dashboard/edification', 
+        icon: <AttendanceIcon /> 
+      })
+
+
+
       navItems.push({ 
         name: 'Communications (SMS)', 
         href: '/dashboard/communications/sms', 
@@ -98,12 +113,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-background text-foreground">
-      <Sidebar churchName={church?.name || 'Mon Église'} logoUrl={church?.logo_url} navItems={navItems} userEmail={user.email || ''} />
+      <div className="print:hidden h-full">
+        <Sidebar churchName={church?.name || 'Mon Église'} logoUrl={church?.logo_url} navItems={navItems} userEmail={user.email || ''} />
+      </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden print:overflow-visible">
         {/* We can place a top header here if needed */}
-        <header className="bg-white/80 dark:bg-background/80 backdrop-blur-md border-b dark:border-white/10 shadow-sm p-4 flex justify-end items-center sticky top-0 z-10">
+        <header className="bg-white/80 dark:bg-background/80 backdrop-blur-md border-b dark:border-white/10 shadow-sm p-4 flex justify-end items-center sticky top-0 z-10 print:hidden">
           <div className="text-sm text-gray-600 dark:text-gray-300">
             Connecté en tant que <span className="font-medium text-primary-900 dark:text-gold-400">
               {profile.role === 'super_admin' ? 'Super Admin (Mode Fantôme)' : user.email}
@@ -112,7 +129,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </header>
         
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-8">
+        <main className="flex-1 overflow-y-auto p-8 print:p-0 print:overflow-visible">
           {children}
         </main>
       </div>

@@ -6,6 +6,7 @@ import NotesWidget from './NotesWidget'
 import DepartmentLeaderWidget from './DepartmentLeaderWidget'
 import PrayerWall from './PrayerWall'
 import { QRCodeSVG } from 'qrcode.react'
+import ScannerModal from './ScannerModal'
 
 type MemberDashboardClientProps = {
   church: any
@@ -21,6 +22,7 @@ type MemberDashboardClientProps = {
   departmentMembers?: any[]
   championOfMonth?: any
   championOfYear?: any
+  myDepartmentLeaders?: any[]
 }
 
 // Function to compute remaining days and hours
@@ -38,8 +40,9 @@ function getRemainingTime(createdAt: string) {
   return `${hours} heure${hours > 1 ? 's' : ''} restante${hours > 1 ? 's' : ''}`
 }
 
-export default function MemberDashboardClient({ church, memberData, nextService, currentRsvp, initialNotes, activeAnnouncement, ledDepartments, stats, birthdaysToday, locationMembers, departmentMembers, championOfMonth, championOfYear }: MemberDashboardClientProps) {
+export default function MemberDashboardClient({ church, memberData, nextService, currentRsvp, initialNotes, activeAnnouncement, ledDepartments, stats, birthdaysToday, locationMembers, departmentMembers, championOfMonth, championOfYear, myDepartmentLeaders }: MemberDashboardClientProps) {
   const [activeTab, setActiveTab] = useState<'home' | 'notes' | 'departement' | 'communaute' | 'qrcode'>('home')
+  const [isScanning, setIsScanning] = useState(false)
 
   const today = new Date()
   const jours = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
@@ -98,10 +101,59 @@ export default function MemberDashboardClient({ church, memberData, nextService,
               Bienvenue dans votre espace personnel de l'église <strong className="text-green-600 dark:text-green-400">{church?.name}</strong>.
             </p>
 
-            <div className="mb-8">
+            {/* Verset de la semaine */}
+            {(() => {
+              const autoVerses = [
+                { text: "L'Éternel est mon berger: je ne manquerai de rien.", ref: "Psaumes 23:1" },
+                { text: "Ne t'ai-je pas donné cet ordre: Fortifie-toi et prends courage ?", ref: "Josué 1:9" },
+                { text: "Je puis tout par celui qui me fortifie.", ref: "Philippiens 4:13" },
+                { text: "Car Dieu a tant aimé le monde qu'il a donné son Fils unique...", ref: "Jean 3:16" },
+                { text: "Confie-toi en l'Éternel de tout ton cœur...", ref: "Proverbes 3:5" }
+              ];
+              // Pick one based on the week of the year
+              const weekNumber = Math.ceil(Math.floor((new Date().getTime() - new Date(new Date().getFullYear(), 0, 1).getTime()) / (24 * 60 * 60 * 1000)) / 7);
+              const currentAutoVerse = autoVerses[weekNumber % autoVerses.length];
+              
+              const isAuto = church?.edification_mode === 'auto' || !church?.edification_mode;
+              const verseText = isAuto ? currentAutoVerse.text : (church?.custom_verse_text || "Car là où deux ou trois sont assemblés en mon nom, je suis au milieu d'eux.");
+              const verseRef = isAuto ? currentAutoVerse.ref : (church?.custom_verse_ref || "Matthieu 18:20");
+
+              return (
+                <div className="mb-8 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/10 p-6 md:p-8 rounded-2xl border border-amber-200/50 dark:border-amber-800/30 shadow-sm relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 text-8xl">✨</div>
+                  <div className="absolute -bottom-10 -left-10 opacity-5 text-9xl">🕊️</div>
+                  
+                  <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
+                    <div className="flex-1">
+                      <span className="text-amber-600 dark:text-amber-500 text-xs font-bold tracking-widest uppercase mb-3 block flex items-center gap-2 justify-center md:justify-start">
+                        <span className="w-8 h-px bg-amber-300"></span>
+                        Verset de la semaine
+                        <span className="w-8 h-px bg-amber-300 md:hidden"></span>
+                      </span>
+                      
+                      <p className="font-serif text-xl md:text-2xl text-gray-800 dark:text-amber-100/90 leading-relaxed italic mb-4">
+                        "{verseText}"
+                      </p>
+                      
+                      <span className="inline-block bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 px-3 py-1 rounded-full text-xs font-bold shadow-sm">
+                        — {verseRef}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            <div className="mb-8 flex flex-wrap gap-4">
               <a href="/localisation" className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-lg font-bold shadow-md transition-colors">
-                <span>📍</span> M'y rendre (Calcul d'itinéraire)
+                <span>📍</span> M'y rendre
               </a>
+              <button 
+                onClick={() => setIsScanning(true)}
+                className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-lg font-bold shadow-md transition-colors animate-pulse-slow"
+              >
+                <span>📷</span> Scanner à l'entrée
+              </button>
             </div>
 
             {birthdaysToday && birthdaysToday.length > 0 && (
@@ -214,6 +266,7 @@ export default function MemberDashboardClient({ church, memberData, nextService,
                     serviceTime={nextService.service_time}
                     serviceType={nextService.type || 'regular'}
                     initialStatus={currentRsvp || undefined}
+                    isToday={new Date(nextService.service_date).toDateString() === new Date().toDateString()}
                   />
                 </div>
               )}
@@ -294,6 +347,33 @@ export default function MemberDashboardClient({ church, memberData, nextService,
             </h2>
             <p className="text-gray-500 mb-6">Membres servant dans les mêmes départements que vous.</p>
             
+            {myDepartmentLeaders && myDepartmentLeaders.length > 0 && (
+              <div className="mb-8">
+                <h3 className="font-bold text-gray-700 dark:text-gray-300 mb-4 uppercase text-xs tracking-widest border-b pb-2">Vos Responsables</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {myDepartmentLeaders.map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-4 p-4 border-2 border-gold-200 dark:border-gold-900/50 bg-gold-50/50 dark:bg-gold-900/10 rounded-xl hover:shadow-md transition-shadow relative overflow-hidden">
+                      <div className="absolute -right-2 -top-2 text-4xl opacity-10 rotate-12">👑</div>
+                      <div className="relative">
+                        {item.leader.photo_url ? (
+                          <img src={item.leader.photo_url} className="w-14 h-14 rounded-full object-cover border-2 border-gold-400 shadow-sm shadow-gold-200" />
+                        ) : (
+                          <div className="w-14 h-14 rounded-full bg-gold-100 border-2 border-gold-400 flex items-center justify-center font-bold text-gold-700 text-lg shadow-sm shadow-gold-200">{item.leader.first_name[0]}</div>
+                        )}
+                        <span className="absolute -bottom-1 -right-1 bg-white rounded-full text-xs shadow-sm">👑</span>
+                      </div>
+                      <div className="relative z-10">
+                        <p className="text-[10px] font-bold text-gold-600 uppercase tracking-wider">{item.departmentName}</p>
+                        <p className="font-bold text-gray-900 dark:text-white leading-tight">{item.leader.first_name} {item.leader.last_name}</p>
+                        <a href={`tel:${item.leader.phone}`} className="text-xs text-primary-600 hover:underline">{item.leader.phone}</a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <h3 className="font-bold text-gray-700 dark:text-gray-300 mb-4 uppercase text-xs tracking-widest border-b pb-2">L'équipe</h3>
             {departmentMembers && departmentMembers.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {departmentMembers.map(m => (
@@ -395,6 +475,7 @@ export default function MemberDashboardClient({ church, memberData, nextService,
           )}
         </div>
       )}
+      {isScanning && <ScannerModal onClose={() => setIsScanning(false)} />}
     </>
   )
 }

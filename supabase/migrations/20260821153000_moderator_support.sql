@@ -26,6 +26,7 @@ WITH CHECK (id = auth.uid());
 
 -- Correction RLS : Permettre à tout utilisateur connecté de rechercher les églises par code pour les rejoindre
 DROP POLICY IF EXISTS "Church admins and members can view their own church" ON public.churches;
+DROP POLICY IF EXISTS "Any authenticated user can view churches" ON public.churches;
 CREATE POLICY "Any authenticated user can view churches" ON public.churches
 FOR SELECT TO authenticated
 USING (true);

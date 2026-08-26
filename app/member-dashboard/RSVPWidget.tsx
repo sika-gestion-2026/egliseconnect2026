@@ -10,9 +10,10 @@ type RSVPWidgetProps = {
   serviceTime: string
   serviceType?: string
   initialStatus?: string
+  isToday?: boolean
 }
 
-export default function RSVPWidget({ serviceId, serviceName, serviceDate, serviceTime, serviceType, initialStatus }: RSVPWidgetProps) {
+export default function RSVPWidget({ serviceId, serviceName, serviceDate, serviceTime, serviceType, initialStatus, isToday }: RSVPWidgetProps) {
   const [status, setStatus] = useState<string | null>(initialStatus || null)
   const [showForm, setShowForm] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -61,14 +62,14 @@ export default function RSVPWidget({ serviceId, serviceName, serviceDate, servic
 
   return (
     <div className={`bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden border-t-4 ${isSpecial ? 'border-gold-500 shadow-gold-900/20' : 'border-primary-900'}`}>
-      <div className={`p-6 text-white relative ${isSpecial ? 'bg-gradient-to-br from-gold-600 to-orange-500 animate-pulse-slow' : 'bg-gradient-to-br from-primary-900 to-primary-600'}`}>
+      <div className={`p-6 text-white relative ${isToday ? 'bg-gradient-to-br from-green-600 to-emerald-500 animate-pulse-slow' : isSpecial ? 'bg-gradient-to-br from-gold-600 to-orange-500 animate-pulse-slow' : 'bg-gradient-to-br from-primary-900 to-primary-600'}`}>
         <div className="absolute top-0 right-0 p-4 opacity-20 text-6xl">
-          {isSpecial ? '⏰' : '⛪'}
+          {isToday ? '🔥' : isSpecial ? '⏰' : '⛪'}
         </div>
         <div className="flex items-center gap-2 mb-1">
-          {isSpecial && <span className="text-xl animate-bounce">🚨</span>}
-          <h2 className="text-sm uppercase tracking-widest font-bold text-gold-200">
-            {isSpecial ? 'Événement Spécial' : 'Prochain Culte'}
+          {(isSpecial || isToday) && <span className="text-xl animate-bounce">{isToday ? '🔥' : '🚨'}</span>}
+          <h2 className="text-sm uppercase tracking-widest font-bold text-white/80">
+            {isToday ? "C'est Aujourd'hui !" : isSpecial ? 'Événement Spécial' : 'Prochain Culte'}
           </h2>
         </div>
         <h3 className="text-3xl font-serif font-bold mb-3 relative z-10">{serviceName}</h3>

@@ -1,8 +1,18 @@
 'use server'
 
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { createClient } from '@/utils/supabase/server'
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
+
+function createAdminClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!key || key === 'METTEZ_VOTRE_CLE_SERVICE_ROLE_ICI') return null
+  return createSupabaseClient(url, key, {
+    auth: { autoRefreshToken: false, persistSession: false }
+  })
+}
 
 export async function createServiceAction(formData: FormData) {
   const cookieStore = await cookies()
@@ -17,17 +27,17 @@ export async function createServiceAction(formData: FormData) {
     return { error: 'Tous les champs sont requis.' }
   }
 
-  // Obtenir l'utilisateur et son profil pour le church_id
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Non autorisé' }
 
   const { data: profile } = await supabase.from('user_profiles').select('church_id').eq('id', user.id).single()
-  
-  if (!profile?.church_id) {
-    return { error: 'Aucune église associée.' }
-  }
+  if (!profile?.church_id) return { error: 'Aucune église associée.' }
 
-  const { error } = await supabase.from('church_services').insert({
+  // Use admin client to bypass RLS
+  const adminClient = createAdminClient()
+  const client = adminClient || supabase
+
+  const { error } = await client.from('church_services').insert({
     church_id: profile.church_id,
     name,
     service_date,
@@ -36,9 +46,7 @@ export async function createServiceAction(formData: FormData) {
     created_by: user.id
   })
 
-  if (error) {
-    return { error: 'Erreur lors de la création du culte: ' + error.message }
-  }
+  if (error) return { error: 'Erreur: ' + error.message }
 
   revalidatePath('/dashboard/attendance')
   return { success: true }

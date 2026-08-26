@@ -19,7 +19,7 @@ interface Member {
   birth_date?: string | null
   gender?: string | null
   marital_status?: string | null
-  user_profiles?: { id: string; created_at: string }[] | null
+  user_profiles?: { id: string; created_at: string; role?: string }[] | null
   created_at?: string
 }
 
@@ -286,32 +286,60 @@ export default function DirectoryClient({
                   <div 
                     onClick={() => router.push(`/dashboard/members/${member.id}`)}
                     key={member.id} 
-                    className="bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden border border-gray-100 dark:border-slate-700 hover:shadow-md hover:border-primary-300 transition-all cursor-pointer group p-4 flex flex-col gap-3"
+                    className={`bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden border ${
+                      member.user_profiles?.[0]?.role === 'dept_leader' || member.user_profiles?.[0]?.role === 'admin'
+                        ? 'border-gold-400/50 dark:border-gold-500/50 hover:shadow-[0_0_15px_rgba(251,191,36,0.2)]'
+                        : 'border-gray-100 dark:border-slate-700 hover:shadow-md hover:border-primary-300'
+                    } transition-all cursor-pointer group p-4 flex flex-col gap-3 relative`}
                   >
+                    {/* Glowing effect background for leaders */}
+                    {(member.user_profiles?.[0]?.role === 'dept_leader' || member.user_profiles?.[0]?.role === 'admin') && (
+                      <div className="absolute -top-10 -right-10 w-24 h-24 bg-gold-400/10 dark:bg-gold-500/10 blur-xl rounded-full pointer-events-none"></div>
+                    )}
+                    
                     <div className="flex items-start gap-4">
-                      {/* Photo ou initiales */}
+                      {/* Photo ou initiales avec auréole pour les responsables */}
                       {member.photo_url ? (
                         <img 
                           src={member.photo_url} 
                           alt="" 
-                          className="w-12 h-12 rounded-full object-cover shadow-sm flex-shrink-0 group-hover:scale-105 transition-transform"
+                          className={`w-12 h-12 rounded-full object-cover shadow-sm flex-shrink-0 group-hover:scale-105 transition-all duration-300 ${
+                            member.user_profiles?.[0]?.role === 'dept_leader' || member.user_profiles?.[0]?.role === 'admin'
+                              ? 'ring-2 ring-gold-400 ring-offset-2 dark:ring-offset-slate-800 shadow-[0_0_15px_rgba(251,191,36,0.6)]'
+                              : ''
+                          }`}
                         />
                       ) : (
-                        <div className="w-12 h-12 rounded-full bg-gold-500 flex items-center justify-center text-white text-lg font-serif font-bold shadow-sm flex-shrink-0">
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-serif font-bold shadow-sm flex-shrink-0 transition-all duration-300 ${
+                          member.user_profiles?.[0]?.role === 'dept_leader' || member.user_profiles?.[0]?.role === 'admin'
+                            ? 'bg-gradient-to-br from-gold-400 to-amber-600 ring-2 ring-gold-400 ring-offset-2 dark:ring-offset-slate-800 shadow-[0_0_15px_rgba(251,191,36,0.6)]'
+                            : 'bg-gold-500'
+                        }`}>
                           {member.first_name?.[0]}{member.last_name?.[0]}
                         </div>
                       )}
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start gap-2">
-                          <h4 className="font-bold text-sm text-gray-900 dark:text-white leading-tight truncate">
+                          <h4 className={`font-bold text-sm leading-tight truncate ${
+                            member.user_profiles?.[0]?.role === 'dept_leader' || member.user_profiles?.[0]?.role === 'admin'
+                              ? 'text-gold-600 dark:text-gold-400'
+                              : 'text-gray-900 dark:text-white'
+                          }`}>
                             {member.first_name} {member.last_name}
                           </h4>
-                          {member.needs_support && (
-                            <span className="flex-shrink-0 text-[9px] font-bold uppercase tracking-wider text-red-600 bg-red-50 dark:bg-red-950/20 px-1.5 py-0.5 rounded-full border border-red-100 dark:border-red-900/30">
-                              Suivi
-                            </span>
-                          )}
+                          <div className="flex flex-col gap-1 items-end">
+                            {member.needs_support && (
+                              <span className="flex-shrink-0 text-[9px] font-bold uppercase tracking-wider text-red-600 bg-red-50 dark:bg-red-950/20 px-1.5 py-0.5 rounded-full border border-red-100 dark:border-red-900/30">
+                                Suivi
+                              </span>
+                            )}
+                            {(member.user_profiles?.[0]?.role === 'dept_leader' || member.user_profiles?.[0]?.role === 'admin') && (
+                              <span className="flex-shrink-0 text-[9px] font-bold uppercase tracking-wider text-gold-700 bg-gold-50 dark:text-gold-300 dark:bg-gold-900/30 px-1.5 py-0.5 rounded-full border border-gold-200 dark:border-gold-700/50 shadow-[0_0_8px_rgba(251,191,36,0.3)]">
+                                👑 Responsable
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest block mt-0.5 truncate">
                           {getStatusLabel(member.status)}

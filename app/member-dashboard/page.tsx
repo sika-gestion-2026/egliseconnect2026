@@ -5,7 +5,7 @@ import MemberDashboardClient from "./MemberDashboardClient";
 import RealTimeClock from "@/components/RealTimeClock";
 import { getTodayLocalDateString } from "@/utils/date";
 import { memberLogoutAction } from "@/app/actions/memberLogout";
-import { verifyMemberSession } from "@/utils/memberSession";
+import { verifyMemberSession, signMemberSession, shouldRenewSession, SESSION_MAX_AGE_SECONDS } from "@/utils/memberSession";
 
 export default async function MemberDashboard() {
   const cookieStore = await cookies();
@@ -40,6 +40,17 @@ export default async function MemberDashboard() {
       if (session) {
         targetChurchId = session.church_id;
         targetMemberId = session.member_id;
+
+        // 🔄 Silent session renewal: if token was issued more than 30 days ago, refresh it
+        if (shouldRenewSession(session)) {
+          const newToken = signMemberSession({ member_id: session.member_id, church_id: session.church_id });
+          cookieStore.set('member_session', newToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: SESSION_MAX_AGE_SECONDS,
+            path: '/'
+          });
+        }
       }
     }
   }

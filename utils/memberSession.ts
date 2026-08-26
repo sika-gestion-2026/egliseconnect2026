@@ -7,17 +7,20 @@
 import crypto from 'crypto';
 
 const SECRET = process.env.MEMBER_SESSION_SECRET || 'fallback-secret-change-in-production';
+const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 90; // 90 days
 
 interface MemberSessionPayload {
   member_id: string;
   church_id: string;
+  iat?: number; // issued-at timestamp (seconds)
 }
 
 /**
  * Creates a signed token: base64(payload) + '.' + HMAC signature
  */
 export function signMemberSession(payload: MemberSessionPayload): string {
-  const data = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const fullPayload = { ...payload, iat: Math.floor(Date.now() / 1000) };
+  const data = Buffer.from(JSON.stringify(fullPayload)).toString('base64url');
   const signature = crypto
     .createHmac('sha256', SECRET)
     .update(data)
@@ -57,3 +60,16 @@ export function verifyMemberSession(token: string): MemberSessionPayload | null 
     return null;
   }
 }
+
+/**
+ * Checks if a session needs renewal (issued more than 30 days ago).
+ * Returns true if the session should be refreshed.
+ */
+export function shouldRenewSession(payload: MemberSessionPayload): boolean {
+  if (!payload.iat) return true; // Old sessions without iat should be renewed
+  const ageInSeconds = Math.floor(Date.now() / 1000) - payload.iat;
+  const thirtyDaysInSeconds = 60 * 60 * 24 * 30;
+  return ageInSeconds > thirtyDaysInSeconds; // Renew after 30 days
+}
+
+export { SESSION_MAX_AGE_SECONDS };

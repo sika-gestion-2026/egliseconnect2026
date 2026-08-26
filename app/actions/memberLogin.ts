@@ -35,9 +35,29 @@ export async function memberLoginAction(formData: FormData) {
   cookieStore.set('member_session', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    maxAge: 60 * 60 * 24 * 30, // 30 jours
+    maxAge: 60 * 60 * 24 * 90, // 90 jours — longue durée pour l'expérience fluide
     path: '/'
   })
+
+  // Store a readable profile hint cookie (non-httpOnly) for the login page auto-redirect
+  // This only contains non-sensitive display data (name, photo, church)
+  if (data.profile) {
+    const hint = JSON.stringify({
+      first_name: data.profile.first_name,
+      last_name: data.profile.last_name,
+      photo_url: data.profile.photo_url || null,
+      church_logo: data.profile.church_logo || null,
+      role: 'member',
+      identifier: formData.get('identifier'),
+      church_code: formData.get('church_code'),
+    });
+    cookieStore.set('profile_hint', Buffer.from(hint).toString('base64'), {
+      httpOnly: false, // Readable by JS on the login page
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24 * 90, // 90 jours
+      path: '/'
+    });
+  }
 
   return { success: true, profile: data.profile }
 }

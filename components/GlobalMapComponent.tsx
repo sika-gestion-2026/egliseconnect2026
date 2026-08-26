@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
+import 'leaflet/dist/leaflet.css';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import Link from 'next/link';
@@ -44,11 +44,8 @@ const createUserIcon = (photoUrl?: string | null) => L.divIcon({
   iconAnchor: [20, 20],
 });
 
-const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), { ssr: false });
-const TileLayer = dynamic(() => import('react-leaflet').then(mod => mod.TileLayer), { ssr: false });
-const Marker = dynamic(() => import('react-leaflet').then(mod => mod.Marker), { ssr: false });
-const Popup = dynamic(() => import('react-leaflet').then(mod => mod.Popup), { ssr: false });
-const RoutingMachine = dynamic<{ userLocation: { lat: number; lng: number }; churchLocation: { lat: number; lng: number }; onRouteFound?: (r: any) => void }>(() => import('@/components/RoutingMachine'), { ssr: false });
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import RoutingMachine from '@/components/RoutingMachine';
 
 export default function GlobalMapComponent({ 
   churches, 

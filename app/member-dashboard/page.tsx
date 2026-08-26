@@ -318,15 +318,15 @@ export default async function MemberDashboard() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border-t-4 border-primary-900 dark:border-gold-500">
           <div className="flex items-center gap-5">
             {/* Composition Photo & Logo */}
-            <div className="relative">
+            <div className="relative w-24 h-24 shrink-0">
               {memberData?.photo_url ? (
                 <img
                   src={memberData.photo_url}
                   alt="Membre"
-                  className="w-20 h-20 rounded-full object-cover border-4 border-gray-50 dark:border-slate-700 shadow-md"
+                  className="w-full h-full rounded-full object-cover object-top border-4 border-white dark:border-slate-700 shadow-lg"
                 />
               ) : (
-                <div className="w-20 h-20 bg-primary-100 dark:bg-primary-900/30 rounded-full border-4 border-gray-50 dark:border-slate-700 flex items-center justify-center text-primary-900 dark:text-gold-400 text-3xl font-bold shadow-md">
+                <div className="w-full h-full bg-primary-100 dark:bg-primary-900/30 rounded-full border-4 border-gray-50 dark:border-slate-700 flex items-center justify-center text-primary-900 dark:text-gold-400 text-3xl font-bold shadow-md">
                   {memberData?.first_name?.[0] || "U"}
                 </div>
               )}
@@ -334,7 +334,7 @@ export default async function MemberDashboard() {
                 <img
                   src={church.logo_url}
                   alt="Eglise"
-                  className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full border-2 border-white dark:border-slate-800 bg-white shadow-sm object-cover"
+                  className="absolute -bottom-1 -right-1 w-10 h-10 rounded-full border-2 border-white dark:border-slate-800 bg-white shadow-sm object-cover"
                 />
               )}
             </div>

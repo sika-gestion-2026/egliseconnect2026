@@ -1,5 +1,4 @@
-import type { NextConfig } from "next";
-
+/** @type {import('next').NextConfig} */
 import withPWAInit from "@ducanh2912/next-pwa";
 
 const withPWA = withPWAInit({
@@ -7,13 +6,12 @@ const withPWA = withPWAInit({
   disable: process.env.NODE_ENV === "development",
 });
 
-const nextConfig: NextConfig = {
+const nextConfig = {
   experimental: {
     serverActions: {
       bodySizeLimit: '10mb',
     },
   },
-  turbopack: {},
 };
 
 export default withPWA(nextConfig);

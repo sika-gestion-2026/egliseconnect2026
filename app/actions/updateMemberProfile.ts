@@ -50,9 +50,30 @@ export async function updateMemberProfile(formData: FormData) {
 
   // Handle photo upload if a new file is provided
   if (photoFile && photoFile.size > 0) {
-    const fileExt = photoFile.name.split('.').pop();
+    // Derive extension from MIME type for reliability
+    const mimeToExt: Record<string, string> = {
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/webp': 'webp',
+      'image/gif': 'gif',
+    };
+    const fileExt = mimeToExt[photoFile.type] || photoFile.name.split('.').pop() || 'jpg';
     const fileName = `${targetChurchId}/${targetMemberId}-${Date.now()}.${fileExt}`;
     
+    // Delete old photo from storage to avoid orphan files accumulating
+    if (existingPhotoUrl && existingPhotoUrl.includes('/logos/')) {
+      try {
+        // Extract the path after '/logos/' from the public URL
+        const oldPath = existingPhotoUrl.split('/logos/').pop();
+        if (oldPath) {
+          await supabase.storage.from('logos').remove([decodeURIComponent(oldPath)]);
+        }
+      } catch (e) {
+        // Non-blocking: if deletion fails, we still proceed with the upload
+        console.warn('Could not delete old photo:', e);
+      }
+    }
+
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('logos')
       .upload(fileName, photoFile, {

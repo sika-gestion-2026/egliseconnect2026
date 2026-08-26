@@ -50,6 +50,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
       { name: 'Mon Département', href: '/dashboard/members', icon: dirIcon },
       { name: 'Scanner QR', href: '/dashboard/scanner', icon: scannerIcon }
     ]
+  } else if (profile.role === 'moderator') {
+    navItems = [
+      { name: 'Tableau de bord', href: '/dashboard', icon: dashIcon },
+      { name: 'Annuaire', href: '/dashboard/members', icon: dirIcon },
+      { name: 'Cultes & Pointages', href: '/dashboard/attendance', icon: attIcon },
+      { name: 'Scanner QR', href: '/dashboard/scanner', icon: scannerIcon },
+      { name: 'Suivi Pastoral & Visites', href: '/dashboard/visits', icon: visitIcon },
+      { name: 'Localisation', href: '/localisation', icon: locIcon }
+    ]
   } else {
     // Admin or Super Admin
     navItems = [

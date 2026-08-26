@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import MemberDashboardClient from "./MemberDashboardClient";
 import RealTimeClock from "@/components/RealTimeClock";
 import { getTodayLocalDateString } from "@/utils/date";
+import { memberLogoutAction } from "@/app/actions/memberLogout";
 
 export default async function MemberDashboard() {
   const cookieStore = await cookies();
@@ -370,8 +371,8 @@ export default async function MemberDashboard() {
               <RealTimeClock />
             </div>
 
-            <form action="/auth/signout" method="post">
-              <button className="text-xs font-bold text-red-500 hover:text-white hover:bg-red-500 bg-red-50 dark:bg-red-900/10 px-3 py-1.5 rounded-md shadow-sm border border-red-200 dark:border-red-800 transition-colors">
+            <form action={memberLogoutAction}>
+              <button type="submit" className="text-xs font-bold text-red-500 hover:text-white hover:bg-red-500 bg-red-50 dark:bg-red-900/10 px-3 py-1.5 rounded-md shadow-sm border border-red-200 dark:border-red-800 transition-colors">
                 Me déconnecter
               </button>
             </form>

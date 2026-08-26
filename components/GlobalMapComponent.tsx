@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import 'leaflet/dist/leaflet.css';
-import 'leaflet/dist/leaflet.css';
+import { useState } from 'react';
+
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import Link from 'next/link';
 
@@ -62,6 +61,7 @@ export default function GlobalMapComponent({
   const [targetChurch, setTargetChurch] = useState<{ lat: number; lng: number } | null>(null);
   const [routeInfo, setRouteInfo] = useState<{ distance: string; time: string } | null>(null);
   const [watchId, setWatchId] = useState<number | null>(null);
+  const [gpsError, setGpsError] = useState<string | null>(null);
 
   const defaultCenter = [churches[0]?.latitude || -4.4419, churches[0]?.longitude || 15.2663];
   
@@ -71,10 +71,11 @@ export default function GlobalMapComponent({
 
   const handleGoThere = (church: any) => {
     if ('geolocation' in navigator) {
-      if (!watchId) toggleLiveTracking(); // Automatically enable live tracking
+      setGpsError(null);
+      if (!watchId) toggleLiveTracking();
       setTargetChurch({ lat: church.latitude, lng: church.longitude });
     } else {
-      alert("Géolocalisation non supportée.");
+      setGpsError("La géolocalisation n'est pas supportée par votre appareil.");
     }
   };
 
@@ -85,14 +86,27 @@ export default function GlobalMapComponent({
       setUserLocation(null);
       setTargetChurch(null);
       setRouteInfo(null);
+      setGpsError(null);
     } else {
       if ('geolocation' in navigator) {
         const id = navigator.geolocation.watchPosition(
           (position) => {
+            setGpsError(null);
             setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
           },
-          (err) => console.error(err),
-          { enableHighAccuracy: true }
+          (err) => {
+            console.error('GPS Error:', err);
+            if (err.code === 1) {
+              setGpsError('Permission GPS refusée. Veuillez l\'autoriser dans les paramètres de votre navigateur.');
+            } else if (err.code === 2) {
+              setGpsError('Position GPS introuvable. Vérifiez que le GPS est activé.');
+            } else {
+              setGpsError('Erreur GPS. Réessayez.');
+            }
+            setWatchId(null);
+            setTargetChurch(null);
+          },
+          { enableHighAccuracy: true, timeout: 10000 }
         );
         setWatchId(id);
       }
@@ -103,6 +117,14 @@ export default function GlobalMapComponent({
 
   return (
     <div className="w-full flex flex-col gap-4 h-full relative">
+      {/* GPS Error Banner */}
+      {gpsError && (
+        <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2">
+          <span>⚠️</span> {gpsError}
+          <button onClick={() => setGpsError(null)} className="ml-auto text-red-400 hover:text-red-600 font-bold">✕</button>
+        </div>
+      )}
+
       {/* Route Info Overlay */}
       {(routeInfo && targetChurch) && (
         <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-[1000] bg-white/90 dark:bg-slate-800/90 backdrop-blur-md px-6 py-4 rounded-2xl shadow-xl border border-white/50 dark:border-slate-700/50 flex flex-col items-center animate-in slide-in-from-top-4">
@@ -148,33 +170,35 @@ export default function GlobalMapComponent({
         <MapContainer center={center as [number, number]} zoom={13} style={{ height: '100%', width: '100%' }}>
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           
-          {targetChurch && userLocation ? (
-             <RoutingMachine userLocation={userLocation} churchLocation={targetChurch} onRouteFound={setRouteInfo} />
-          ) : (
-            churches.map((church) => (
-              <Marker key={church.id} position={[church.latitude, church.longitude]} icon={createChurchIcon(church.logo_url, church.id === userChurchId)}>
-                <Popup>
-                  <div className="flex flex-col gap-3 p-1 min-w-[220px]">
-                    <div className="flex items-center gap-3 border-b pb-2">
-                      {church.logo_url ? <img src={church.logo_url} className="w-10 h-10 rounded-full border border-gray-200 object-cover" /> : <div className="text-2xl">⛪</div>}
-                      <div>
-                        <h3 className="font-bold text-gray-900 m-0 leading-tight">{church.name}</h3>
-                        <p className="text-xs text-gray-500 m-0">{church.city} {church.commune}</p>
-                      </div>
+          {/* Always show church markers */}
+          {churches.map((church) => (
+            <Marker key={church.id} position={[church.latitude, church.longitude]} icon={createChurchIcon(church.logo_url, church.id === userChurchId)}>
+              <Popup>
+                <div className="flex flex-col gap-3 p-1 min-w-[220px]">
+                  <div className="flex items-center gap-3 border-b pb-2">
+                    {church.logo_url ? <img src={church.logo_url} className="w-10 h-10 rounded-full border border-gray-200 object-cover" /> : <div className="text-2xl">⛪</div>}
+                    <div>
+                      <h3 className="font-bold text-gray-900 m-0 leading-tight">{church.name}</h3>
+                      <p className="text-xs text-gray-500 m-0">{church.city} {church.commune}</p>
                     </div>
-                    <button onClick={() => handleGoThere(church)} className="bg-primary-900 hover:bg-primary-800 text-white w-full py-2 rounded-md text-sm font-medium transition-colors">📍 M'y rendre</button>
-                    {church.id === userChurchId ? (
-                      <Link href="/dashboard" className="bg-green-600 hover:bg-green-500 text-white text-center w-full py-2 rounded-md text-sm font-medium transition-colors">Accéder à mon église</Link>
-                    ) : (
-                      <div className="text-center text-xs text-gray-400 bg-gray-50 border rounded-md py-1.5 flex items-center justify-center gap-1">
-                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                         Espace membre
-                      </div>
-                    )}
                   </div>
-                </Popup>
-              </Marker>
-            ))
+                  <button onClick={() => handleGoThere(church)} className="bg-primary-900 hover:bg-primary-800 text-white w-full py-2 rounded-md text-sm font-medium transition-colors">📍 M'y rendre</button>
+                  {church.id === userChurchId ? (
+                    <Link href="/dashboard" className="bg-green-600 hover:bg-green-500 text-white text-center w-full py-2 rounded-md text-sm font-medium transition-colors">Accéder à mon église</Link>
+                  ) : (
+                    <div className="text-center text-xs text-gray-400 bg-gray-50 border rounded-md py-1.5 flex items-center justify-center gap-1">
+                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                       Espace membre
+                    </div>
+                  )}
+                </div>
+              </Popup>
+            </Marker>
+          ))}
+
+          {/* Show routing only when both user position and target are known */}
+          {targetChurch && userLocation && (
+            <RoutingMachine userLocation={userLocation} churchLocation={targetChurch} onRouteFound={setRouteInfo} />
           )}
           {userLocation && (
             <Marker position={[userLocation.lat, userLocation.lng]} icon={createUserIcon(userPhotoUrl)}>

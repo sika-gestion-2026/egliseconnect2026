@@ -17,6 +17,14 @@ export default function ProfileForm({ member }: { member: any }) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
+      
+      // Validation taille : max 5 Mo
+      if (file.size > 5 * 1024 * 1024) {
+        alert('La photo est trop lourde. Taille maximale : 5 Mo.');
+        e.target.value = '';
+        return;
+      }
+      
       const reader = new FileReader();
       reader.addEventListener('load', () => {
         setOriginalImageSrc(reader.result?.toString() || null);

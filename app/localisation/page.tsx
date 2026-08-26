@@ -18,11 +18,14 @@ export default async function LocalisationPage() {
   let userName = null;
 
   if (user) {
-    const { data: profile } = await supabase.from('user_profiles').select('church_id').eq('id', user.id).single();
+    const { data: profile } = await supabase.from('user_profiles').select('church_id, member_id').eq('id', user.id).single();
     if (profile?.church_id) targetChurchId = profile.church_id;
-    const { data: member } = await supabase.from('members').select('photo_url, first_name, last_name').eq('id', user.id).single();
-    if (member?.photo_url) userPhotoUrl = member.photo_url;
-    if (member) userName = `${member.first_name || ''} ${member.last_name || ''}`.trim();
+    // Use the member_id from profile, not user.id (they are different!)
+    if (profile?.member_id) {
+      const { data: member } = await supabase.from('members').select('photo_url, first_name, last_name').eq('id', profile.member_id).single();
+      if (member?.photo_url) userPhotoUrl = member.photo_url;
+      if (member) userName = `${member.first_name || ''} ${member.last_name || ''}`.trim();
+    }
   }
 
   if (!targetChurchId) {
@@ -33,6 +36,12 @@ export default async function LocalisationPage() {
         targetChurchId = decoded.church_id;
       } catch (e) {}
     }
+  }
+
+  // Redirect unauthenticated visitors — the map shows sensitive GPS data
+  if (!targetChurchId) {
+    const { redirect } = await import('next/navigation');
+    redirect('/login');
   }
 
   // Fetch ALL churches with GPS coordinates

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { siteConfig } from '@/utils/config'
 
 export default function Home() {
   return (
@@ -26,7 +27,7 @@ export default function Home() {
       </main>
       <footer className="w-full pb-6 text-center">
         <p className="text-[10px] text-gray-400 opacity-70">
-          Créé par Christian Anisonok 0777916407
+          Créé par {siteConfig.creatorName} {siteConfig.creatorPhone}
         </p>
       </footer>
     </div>

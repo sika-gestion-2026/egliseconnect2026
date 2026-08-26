@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { revalidatePath } from 'next/cache'
 import DeleteChurchButton from '@/components/DeleteChurchButton'
+import LocationPicker from '@/components/LocationPicker'
 
 export default async function ManageChurchPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -68,6 +69,8 @@ export default async function ManageChurchPage(props: { params: Promise<{ id: st
     const vision = formData.get('vision') as string
     const leaderName = formData.get('leader_name') as string
     const leaderContact = formData.get('leader_contact') as string
+    const lat = formData.get('latitude')
+    const lng = formData.get('longitude')
 
     let finalLogoUrl = church.logo_url
     const logoFile = formData.get('logo_file') as File
@@ -98,7 +101,9 @@ export default async function ManageChurchPage(props: { params: Promise<{ id: st
         vision,
         logo_url: finalLogoUrl,
         leader_name: leaderName,
-        leader_contact: leaderContact
+        leader_contact: leaderContact,
+        latitude: lat ? parseFloat(lat as string) : null,
+        longitude: lng ? parseFloat(lng as string) : null,
       })
       .eq('id', churchId)
 
@@ -271,6 +276,18 @@ export default async function ManageChurchPage(props: { params: Promise<{ id: st
                   rows={3} 
                   className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-700"
                 ></textarea>
+              </div>
+
+              <div className="border-t pt-4 dark:border-slate-700">
+                <h4 className="text-md font-bold mb-4 text-primary-900 dark:text-gold-400">Localisation GPS (Carte)</h4>
+                <div className="bg-slate-50 dark:bg-slate-900/50 p-6 rounded-xl border dark:border-slate-700/50 shadow-inner">
+                  <LocationPicker 
+                    initialLat={church.latitude} 
+                    initialLng={church.longitude} 
+                    churchLogoUrl={church.logo_url}
+                    // Optional: userPhotoUrl pour le super admin, on peut ignorer ou mettre une icone par défaut
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4 dark:border-slate-700">

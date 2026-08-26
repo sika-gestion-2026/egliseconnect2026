@@ -16,6 +16,9 @@ interface Member {
   profession: string | null
   needs_support: boolean
   functions: any
+  birth_date?: string | null
+  gender?: string | null
+  marital_status?: string | null
   user_profiles?: { id: string; created_at: string }[] | null
   created_at?: string
 }
@@ -38,7 +41,8 @@ export default function DirectoryClient({
   const [isPending, startTransition] = useTransition()
 
   const [members, setMembers] = useState<Member[]>(initialMembers)
-  const [groupBy, setGroupBy] = useState<'quartier' | 'status' | 'function'>(initialGroup as any)
+  const [groupBy, setGroupBy] = useState<'quartier' | 'status' | 'function' | 'birthday' | 'gender' | 'marital'>(initialGroup as any)
+
   const [searchQuery, setSearchQuery] = useState(initialQuery)
 
   // Trigger search on the server
@@ -54,7 +58,7 @@ export default function DirectoryClient({
     })
   }
 
-  const handleGroupChange = (group: 'quartier' | 'status' | 'function') => {
+  const handleGroupChange = (group: 'quartier' | 'status' | 'function' | 'birthday' | 'gender' | 'marital') => {
     setGroupBy(group)
     startTransition(() => {
       const params = new URLSearchParams()
@@ -123,16 +127,34 @@ export default function DirectoryClient({
           }
         }
 
-        if (!fns || fns.length === 0) {
-          const noGroup = 'Sans Département / Groupe de service'
-          if (!groups[noGroup]) groups[noGroup] = []
-          groups[noGroup].push(m)
-        } else {
-          fns.forEach(fn => {
-            if (!groups[fn]) groups[fn] = []
-            groups[fn].push(m)
-          })
+        // Pour éviter les titres trop longs et les doublons, on utilise uniquement le premier département (département principal)
+        const groupName = (!fns || fns.length === 0) ? 'Sans Département / Groupe de service' : fns[0]
+        if (!groups[groupName]) groups[groupName] = []
+        groups[groupName].push(m)
+      })
+    } else if (groupBy === 'birthday') {
+      const monthNames = ['01 - Janvier', '02 - Février', '03 - Mars', '04 - Avril', '05 - Mai', '06 - Juin', '07 - Juillet', '08 - Août', '09 - Septembre', '10 - Octobre', '11 - Novembre', '12 - Décembre']
+      filteredMembers.forEach(m => {
+        let groupName = 'Date de naissance inconnue'
+        if (m.birth_date) {
+           const date = new Date(m.birth_date)
+           const month = date.getMonth()
+           if (!isNaN(month)) groupName = monthNames[month]
         }
+        if (!groups[groupName]) groups[groupName] = []
+        groups[groupName].push(m)
+      })
+    } else if (groupBy === 'gender') {
+      filteredMembers.forEach(m => {
+        const groupName = m.gender === 'M' ? 'Hommes' : (m.gender === 'F' ? 'Femmes' : 'Non précisé')
+        if (!groups[groupName]) groups[groupName] = []
+        groups[groupName].push(m)
+      })
+    } else if (groupBy === 'marital') {
+      filteredMembers.forEach(m => {
+        const groupName = m.marital_status || 'Non précisé'
+        if (!groups[groupName]) groups[groupName] = []
+        groups[groupName].push(m)
       })
     }
 
@@ -169,7 +191,17 @@ export default function DirectoryClient({
             {/* Sélections de classement */}
             <div className="flex items-center gap-2">
             <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Classer par :</span>
-            <div className="flex bg-gray-100 dark:bg-slate-900 p-1 rounded-lg border dark:border-slate-700">
+            <div className="flex flex-wrap bg-gray-100 dark:bg-slate-900 p-1 rounded-lg border dark:border-slate-700 gap-1">
+              <button
+                onClick={() => handleGroupChange('function')}
+                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                  groupBy === 'function'
+                    ? 'bg-primary-900 text-white shadow-sm'
+                    : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                🛠️ Département
+              </button>
               <button
                 onClick={() => handleGroupChange('quartier')}
                 className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
@@ -191,14 +223,34 @@ export default function DirectoryClient({
                 🏷️ Statut
               </button>
               <button
-                onClick={() => handleGroupChange('function')}
+                onClick={() => handleGroupChange('birthday')}
                 className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-                  groupBy === 'function'
+                  groupBy === 'birthday'
                     ? 'bg-primary-900 text-white shadow-sm'
                     : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
-                🛠️ Département
+                🎂 Anniversaire
+              </button>
+              <button
+                onClick={() => handleGroupChange('gender')}
+                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                  groupBy === 'gender'
+                    ? 'bg-primary-900 text-white shadow-sm'
+                    : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                🚻 Genre
+              </button>
+              <button
+                onClick={() => handleGroupChange('marital')}
+                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                  groupBy === 'marital'
+                    ? 'bg-primary-900 text-white shadow-sm'
+                    : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                💍 Matrimonial
               </button>
             </div>
           </div>
@@ -229,98 +281,80 @@ export default function DirectoryClient({
               </div>
 
               {/* Liste des cartes du groupe */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {grouped[groupKey].map((member) => (
-                  <Link 
-                    href={`/dashboard/members/${member.id}`} 
+                  <div 
+                    onClick={() => router.push(`/dashboard/members/${member.id}`)}
                     key={member.id} 
-                    className="bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden border border-gray-100 dark:border-slate-700 hover:shadow-md hover:border-primary-300 transition-all cursor-pointer block group"
+                    className="bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden border border-gray-100 dark:border-slate-700 hover:shadow-md hover:border-primary-300 transition-all cursor-pointer group p-4 flex flex-col gap-3"
                   >
-                    <div className="h-16 bg-primary-900 relative">
-                      <div className="absolute inset-0 bg-gradient-to-r from-primary-900 to-primary-750"></div>
-                    </div>
-                    <div className="relative px-6 pb-6">
-                      
+                    <div className="flex items-start gap-4">
                       {/* Photo ou initiales */}
                       {member.photo_url ? (
                         <img 
                           src={member.photo_url} 
                           alt="" 
-                          className="w-16 h-16 rounded-full object-cover absolute -top-8 border-4 border-white dark:border-slate-800 shadow-md group-hover:scale-105 transition-transform"
+                          className="w-12 h-12 rounded-full object-cover shadow-sm flex-shrink-0 group-hover:scale-105 transition-transform"
                         />
                       ) : (
-                        <div className="w-16 h-16 rounded-full bg-gold-500 flex items-center justify-center text-white text-xl font-serif font-bold absolute -top-8 border-4 border-white dark:border-slate-800 shadow-sm">
+                        <div className="w-12 h-12 rounded-full bg-gold-500 flex items-center justify-center text-white text-lg font-serif font-bold shadow-sm flex-shrink-0">
                           {member.first_name?.[0]}{member.last_name?.[0]}
                         </div>
                       )}
                       
-                      {/* Badge Suivi si besoin d'accompagnement */}
-                      {member.needs_support && (
-                        <div className="absolute top-2 right-4 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-red-600 bg-red-50 dark:bg-red-950/20 px-2 py-0.5 rounded-full border border-red-100 dark:border-red-900/30">
-                          Suivi
-                        </div>
-                      )}
-                      
-                      <div className="mt-10 space-y-2">
-                        <div>
-                          <h4 className="font-bold text-base text-gray-900 dark:text-white leading-tight">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start gap-2">
+                          <h4 className="font-bold text-sm text-gray-900 dark:text-white leading-tight truncate">
                             {member.first_name} {member.last_name}
                           </h4>
-                          <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest block mt-1">
-                            {getStatusLabel(member.status)}
-                          </span>
-                        </div>
-                        
-                        <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
-                          {member.profession && (
-                            <p className="flex items-center gap-2 truncate">
-                              💼 <span className="truncate">{member.profession}</span>
-                            </p>
-                          )}
-                          {member.commune && (
-                            <p className="flex items-center gap-2 truncate">
-                              📍 <span className="truncate">{member.commune} {member.quartier ? `(${member.quartier})` : ''}</span>
-                            </p>
+                          {member.needs_support && (
+                            <span className="flex-shrink-0 text-[9px] font-bold uppercase tracking-wider text-red-600 bg-red-50 dark:bg-red-950/20 px-1.5 py-0.5 rounded-full border border-red-100 dark:border-red-900/30">
+                              Suivi
+                            </span>
                           )}
                         </div>
-                        
-                        {member.phone && (
-                          <div className="pt-3 mt-2 border-t dark:border-slate-750">
-                            <button 
-                              type="button"
-                              onClick={(e) => {
-                                e.preventDefault()
-                                e.stopPropagation()
-                                window.location.href = `tel:${member.phone}`
-                              }} 
-                              className="flex items-center justify-center gap-2 w-full py-1.5 bg-green-50 hover:bg-green-100 text-green-700 dark:bg-green-900/20 dark:hover:bg-green-900/40 dark:text-green-400 rounded-md transition-colors text-xs font-bold border border-green-200 dark:border-green-800"
-                            >
-                              📞 Appeler
-                            </button>
-                            <Link 
-                              href={`/dashboard/visits`}
-                              onClick={(e) => e.stopPropagation()}
-                              className="flex items-center justify-center gap-2 w-full py-1.5 mt-2 bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:hover:bg-amber-900/40 dark:text-amber-400 rounded-md transition-colors text-xs font-bold border border-amber-200 dark:border-amber-800"
-                            >
-                              ✝️ Visite
-                            </Link>
-                          </div>
-                        )}
-                        
-                        {!member.phone && (
-                          <div className="pt-3 mt-2 border-t dark:border-slate-750">
-                            <Link 
-                              href={`/dashboard/visits`}
-                              onClick={(e) => e.stopPropagation()}
-                              className="flex items-center justify-center gap-2 w-full py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:hover:bg-amber-900/40 dark:text-amber-400 rounded-md transition-colors text-xs font-bold border border-amber-200 dark:border-amber-800"
-                            >
-                              ✝️ Demander une Visite
-                            </Link>
-                          </div>
-                        )}
+                        <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest block mt-0.5 truncate">
+                          {getStatusLabel(member.status)}
+                        </span>
                       </div>
                     </div>
-                  </Link>
+                    
+                    <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
+                      {member.profession && (
+                        <p className="flex items-center gap-2 truncate">
+                          💼 <span className="truncate">{member.profession}</span>
+                        </p>
+                      )}
+                      {member.commune && (
+                        <p className="flex items-center gap-2 truncate">
+                          📍 <span className="truncate">{member.commune} {member.quartier ? `(${member.quartier})` : ''}</span>
+                        </p>
+                      )}
+                    </div>
+                    
+                    <div className="pt-2 mt-auto border-t dark:border-slate-750 flex gap-2">
+                      {member.phone && (
+                        <button 
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            window.location.href = `tel:${member.phone}`
+                          }} 
+                          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-green-50 hover:bg-green-100 text-green-700 dark:bg-green-900/20 dark:hover:bg-green-900/40 dark:text-green-400 rounded-md transition-colors text-xs font-bold border border-green-200 dark:border-green-800"
+                        >
+                          📞 Appeler
+                        </button>
+                      )}
+                      <Link 
+                        href={`/dashboard/visits`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:hover:bg-amber-900/40 dark:text-amber-400 rounded-md transition-colors text-xs font-bold border border-amber-200 dark:border-amber-800"
+                      >
+                        ✝️ {member.phone ? 'Visite' : 'Demander visite'}
+                      </Link>
+                    </div>
+                  </div>
                 ))}
               </div>
 

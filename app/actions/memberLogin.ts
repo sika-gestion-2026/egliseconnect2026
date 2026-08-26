@@ -14,50 +14,23 @@ export async function memberLoginAction(formData: FormData) {
   const cookieStore = await cookies()
   const supabase = createClient(cookieStore)
 
-  // 1. Trouver l'église par son code
-  const { data: church } = await supabase
-    .from('churches')
-    .select('id')
-    .ilike('code', churchCode)
-    .single()
-    
-  if (!church) {
-    return { error: 'Code d\'église invalide.' }
-  }
-
-  // 2. Trouver le membre par son téléphone ou email
-  // On récupère les membres pour cette église car la base n'est pas énorme en général,
-  // ce qui permet de comparer les numéros de téléphone de façon plus souple (avec ou sans espaces).
-  const { data: members, error } = await supabase
-    .from('members')
-    .select('id, phone, email, first_name, last_name, photo_url')
-    .eq('church_id', church.id)
-
-  if (error || !members || members.length === 0) {
-    return { error: 'Aucun membre trouvé dans cette église.' }
-  }
-
-  const cleanInput = identifier.trim().toLowerCase()
-  const inputAsPhone = cleanInput.replace(/\s+/g, '') // remove all spaces
-
-  const matchedMember = members.find(m => {
-    if (m.email && m.email.trim().toLowerCase() === cleanInput) return true;
-    if (m.phone) {
-      const dbPhone = m.phone.replace(/\s+/g, '').toLowerCase()
-      if (dbPhone === inputAsPhone) return true;
-    }
-    return false;
+  // Utiliser la fonction RPC pour contourner RLS de façon sécurisée
+  const { data, error } = await supabase.rpc('authenticate_member', {
+    p_church_code: churchCode,
+    p_identifier: identifier
   })
 
-  if (!matchedMember) {
-    return { error: 'Aucun membre trouvé avec cet identifiant (téléphone ou email) dans cette église.' }
+  if (error || !data) {
+    return { error: 'Erreur lors de la vérification des identifiants.' }
   }
 
-  const memberId = matchedMember.id
+  if (data.error) {
+    return { error: data.error }
+  }
 
   // 3. Créer une session personnalisée
   // On stocke l'ID du membre et l'ID de l'église dans un cookie sécurisé
-  const sessionData = JSON.stringify({ member_id: memberId, church_id: church.id })
+  const sessionData = JSON.stringify({ member_id: data.member_id, church_id: data.church_id })
   
   // Utilisation de btoa/atob basique pour éviter que le JSON soit en clair, 
   // idéalement on utiliserait un JWT signé, mais pour la démo/simplicité c'est fonctionnel
@@ -70,14 +43,5 @@ export async function memberLoginAction(formData: FormData) {
     path: '/'
   })
 
-  // 4. Récupérer les infos pour le profile mémorisé
-  const { data: churchData } = await supabase.from('churches').select('logo_url').eq('id', church.id).single()
-  const profileInfo = {
-    first_name: matchedMember.first_name || '',
-    last_name: matchedMember.last_name || '',
-    photo_url: matchedMember.photo_url || '',
-    church_logo: churchData?.logo_url || ''
-  }
-
-  return { success: true, profile: profileInfo }
+  return { success: true, profile: data.profile }
 }

@@ -1,0 +1,106 @@
+'use server'
+
+import { createClient } from '@/utils/supabase/server'
+import { cookies } from 'next/headers'
+import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
+
+export async function updateMemberProfile(formData: FormData) {
+  const cookieStore = await cookies()
+  const memberSession = cookieStore.get('member_session')?.value
+  
+  if (!memberSession) {
+    return { error: 'Session invalide ou expirée.' }
+  }
+  
+  let targetChurchId = null;
+  let targetMemberId = null;
+  
+  try {
+    const decoded = JSON.parse(Buffer.from(memberSession, 'base64').toString('utf-8'));
+    targetChurchId = decoded.church_id;
+    targetMemberId = decoded.member_id;
+  } catch (e) {
+    return { error: 'Erreur de lecture de la session.' }
+  }
+  
+  if (!targetChurchId || !targetMemberId) {
+    return { error: 'Session invalide.' }
+  }
+
+  const supabase = createClient(cookieStore)
+
+  // Extract form data
+  const firstName = formData.get('first_name') as string
+  const lastName = formData.get('last_name') as string
+  const email = formData.get('email') as string
+  const phone = formData.get('phone') as string
+  const birthDate = formData.get('birth_date') as string
+  const commune = formData.get('commune') as string
+  const quartier = formData.get('quartier') as string
+  const profession = formData.get('profession') as string
+  const existingPhotoUrl = formData.get('existing_photo_url') as string
+  const photoFile = formData.get('photo_file') as File | null
+
+  if (!firstName || !lastName) {
+    return { error: 'Le nom et le prénom sont obligatoires.' }
+  }
+  
+  let finalPhotoUrl = existingPhotoUrl;
+
+  // Handle photo upload if a new file is provided
+  if (photoFile && photoFile.size > 0) {
+    const fileExt = photoFile.name.split('.').pop();
+    const fileName = `${targetChurchId}/${targetMemberId}-${Date.now()}.${fileExt}`;
+    
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('logos')
+      .upload(fileName, photoFile, {
+        cacheControl: '3600',
+        upsert: true
+      });
+      
+    if (uploadError) {
+      console.error('Erreur upload photo:', uploadError);
+      return { error: 'Erreur lors du téléchargement de la photo.' };
+    }
+    
+    if (uploadData) {
+      const { data: publicUrlData } = supabase.storage
+        .from('logos')
+        .getPublicUrl(uploadData.path);
+        
+      if (publicUrlData) {
+        finalPhotoUrl = publicUrlData.publicUrl;
+      }
+    }
+  }
+
+  // Call the secure RPC function to bypass RLS for members updating their own profile
+  const { data, error } = await supabase.rpc('update_member_profile_secure', {
+    p_member_id: targetMemberId,
+    p_church_id: targetChurchId,
+    p_first_name: firstName,
+    p_last_name: lastName,
+    p_phone: phone || null,
+    p_email: email || null,
+    p_birth_date: birthDate || null,
+    p_commune: commune || null,
+    p_quartier: quartier || null,
+    p_profession: profession || null,
+    p_photo_url: finalPhotoUrl || null
+  })
+
+  if (error) {
+    return { error: 'Erreur lors de la mise à jour du profil.' }
+  }
+  
+  if (data?.error) {
+    return { error: data.error }
+  }
+
+  revalidatePath('/member-dashboard')
+  revalidatePath(`/dashboard/members/${targetMemberId}`)
+  
+  return { success: true }
+}

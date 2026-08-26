@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { cookies } from 'next/headers'
 import ChurchesTable from './ChurchesTable'
-import RealTimeClock from '../components/RealTimeClock'
+import RealTimeClock from '@/components/RealTimeClock'
 
 export default async function SuperAdminDashboard() {
   const cookieStore = await cookies()

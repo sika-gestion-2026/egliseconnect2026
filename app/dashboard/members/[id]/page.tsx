@@ -10,7 +10,7 @@ export default async function MemberDetailPage(props: { params: Promise<{ id: st
   const supabase = createClient(cookieStore)
 
   const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('user_profiles').select('church_id').eq('id', user?.id).single()
+  const { data: profile } = await supabase.from('user_profiles').select('church_id, churches(code)').eq('id', user?.id).single()
 
   const { data: member } = await supabase
     .from('members')
@@ -158,6 +158,31 @@ export default async function MemberDetailPage(props: { params: Promise<{ id: st
               <p><span className="font-semibold text-gray-500">Commune :</span> {member.commune || 'Non spécifiée'}</p>
               <p><span className="font-semibold text-gray-500">Quartier :</span> {member.quartier || 'Non spécifié'}</p>
             </div>
+          </div>
+          
+          {/* Accès Espace Fidèle (Surprise) */}
+          <div className="bg-gradient-to-br from-primary-900 to-slate-900 rounded-xl shadow-lg p-6 text-white space-y-4 relative overflow-hidden border border-gold-500/30">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gold-500/20 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
+            <h3 className="text-lg font-serif font-bold text-gold-400 border-b border-primary-500/50 pb-2 flex items-center gap-2 relative z-10">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+              Accès Espace Fidèle
+            </h3>
+            <p className="text-sm text-gray-300 relative z-10">
+              Ce membre possède un espace personnel sur l'application. Transmettez-lui ces accès pour se connecter :
+            </p>
+            <div className="bg-black/40 p-4 rounded-lg space-y-3 border border-white/10 text-sm relative z-10">
+              <div className="flex flex-col">
+                <span className="text-gray-400 text-xs uppercase tracking-wider">Identifiant (Email ou Tél)</span>
+                <span className="font-bold text-gold-400 text-base">{member.email || member.phone || "⚠️ Aucun email ou tél renseigné"}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-gray-400 text-xs uppercase tracking-wider">Code de l'église (Mot de passe)</span>
+                <span className="font-bold text-white text-base tracking-widest">{(profile?.churches as any)?.code || 'CODE'}</span>
+              </div>
+            </div>
+            <p className="text-xs text-gray-400 italic relative z-10 text-center">
+              Le membre devra sélectionner l'onglet "Espace Fidèle" sur la page de connexion.
+            </p>
           </div>
 
         </div>

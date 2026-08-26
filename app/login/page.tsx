@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { PasswordInput } from './PasswordInput'
 import { login, signup } from './actions'
 import { memberLoginAction } from '@/app/actions/memberLogin'
+import { registerPastorAction } from './registerPastor'
 
 interface SavedProfile {
   first_name: string
@@ -25,6 +26,7 @@ function LoginContent() {
   // Tab state
   const initialSpace = searchParams.get('space') === 'member' ? 'member' : 'admin'
   const [activeTab, setActiveTab] = useState<'admin' | 'member'>(initialSpace)
+  const [adminMode, setAdminMode] = useState<'login' | 'register'>('login')
   
   // Form states
   const [loading, setLoading] = useState(false)
@@ -76,6 +78,24 @@ function LoginContent() {
         localStorage.setItem('rememberedProfile', JSON.stringify(p))
       }
       // Redirect
+      window.location.href = res.redirectUrl
+    }
+  }
+
+  // Admin register handler
+  const handleAdminRegister = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setLoading(true)
+    setErrorMsg(null)
+    
+    const formData = new FormData(e.currentTarget)
+    const res = await registerPastorAction(formData)
+    
+    if (res.error) {
+      setErrorMsg(res.error)
+      setLoading(false)
+    } else if (res.success && res.redirectUrl) {
+      // Pas de profil enregistré automatiquement à la première connexion, ou on pourrait.
       window.location.href = res.redirectUrl
     }
   }
@@ -235,47 +255,114 @@ function LoginContent() {
 
               {/* Formulaire Admin */}
               {activeTab === 'admin' && (
-                <form className="space-y-5" onSubmit={handleAdminSubmit}>
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                      Adresse Email
-                    </label>
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      required
-                      defaultValue={savedProfile?.email || ''}
-                      className="w-full px-4 py-3 mt-1 border rounded-xl border-gray-300 dark:border-gray-700 dark:bg-slate-800 focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all outline-none"
-                      placeholder="votre@email.com"
-                    />
-                  </div>
-                  
-                  <PasswordInput />
-                  
-                  <div className="flex items-center mt-4">
-                    <input 
-                      id="remember-admin" 
-                      type="checkbox" 
-                      checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                      className="w-4 h-4 text-primary-900 border-gray-300 rounded focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-600" 
-                    />
-                    <label htmlFor="remember-admin" className="ml-2 block text-sm text-gray-700 dark:text-gray-300 font-medium">
-                      Se souvenir de mon profil
-                    </label>
-                  </div>
-
-                  <div className="flex flex-col gap-3 pt-4">
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="w-full px-4 py-3 text-white bg-primary-900 rounded-xl hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-900 shadow-lg hover:shadow-xl font-bold transition-all text-lg disabled:opacity-50 disabled:scale-100 active:scale-95"
+                <div className="space-y-4">
+                  {/* Sous-onglets Connexion / Inscription */}
+                  <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
+                    <button 
+                      type="button"
+                      onClick={() => setAdminMode('login')}
+                      className={`pb-2 px-4 text-sm font-bold transition-all ${adminMode === 'login' ? 'border-b-2 border-gold-500 text-gold-600 dark:text-gold-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
                     >
-                      {loading ? 'Connexion en cours...' : 'Se connecter'}
+                      Connexion
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => setAdminMode('register')}
+                      className={`pb-2 px-4 text-sm font-bold transition-all ${adminMode === 'register' ? 'border-b-2 border-gold-500 text-gold-600 dark:text-gold-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
+                    >
+                      Première connexion (Activer mon compte)
                     </button>
                   </div>
-                </form>
+
+                  {adminMode === 'login' ? (
+                    <form className="space-y-5 animate-in fade-in slide-in-from-left-4" onSubmit={handleAdminSubmit}>
+                      <div>
+                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                          Adresse Email
+                        </label>
+                        <input
+                          id="email"
+                          name="email"
+                          type="email"
+                          required
+                          defaultValue={savedProfile?.email || ''}
+                          className="w-full px-4 py-3 mt-1 border rounded-xl border-gray-300 dark:border-gray-700 dark:bg-slate-800 focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all outline-none"
+                          placeholder="votre@email.com"
+                        />
+                      </div>
+                      
+                      <PasswordInput />
+                      
+                      <div className="flex items-center mt-4">
+                        <input 
+                          id="remember-admin" 
+                          type="checkbox" 
+                          checked={rememberMe}
+                          onChange={(e) => setRememberMe(e.target.checked)}
+                          className="w-4 h-4 text-primary-900 border-gray-300 rounded focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-600" 
+                        />
+                        <label htmlFor="remember-admin" className="ml-2 block text-sm text-gray-700 dark:text-gray-300 font-medium">
+                          Se souvenir de mon profil
+                        </label>
+                      </div>
+
+                      <div className="flex flex-col gap-3 pt-4">
+                        <button
+                          type="submit"
+                          disabled={loading}
+                          className="w-full px-4 py-3 text-white bg-primary-900 rounded-xl hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-900 shadow-lg hover:shadow-xl font-bold transition-all text-lg disabled:opacity-50 disabled:scale-100 active:scale-95"
+                        >
+                          {loading ? 'Connexion en cours...' : 'Se connecter'}
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <form className="space-y-5 animate-in fade-in slide-in-from-right-4" onSubmit={handleAdminRegister}>
+                      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 rounded-lg text-sm mb-4 border border-blue-200 dark:border-blue-800/50">
+                        Saisissez l'adresse email qui vous a été assignée par l'administrateur système pour activer votre espace Pasteur.
+                      </div>
+                      
+                      <div>
+                        <label htmlFor="reg-email" className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                          Adresse Email assignée
+                        </label>
+                        <input
+                          id="reg-email"
+                          name="email"
+                          type="email"
+                          required
+                          className="w-full px-4 py-3 mt-1 border rounded-xl border-gray-300 dark:border-gray-700 dark:bg-slate-800 focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all outline-none"
+                          placeholder="votre@email.com"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label htmlFor="reg-password" className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                          Créer votre mot de passe
+                        </label>
+                        <input
+                          id="reg-password"
+                          name="password"
+                          type="password"
+                          required
+                          minLength={6}
+                          className="w-full px-4 py-3 mt-1 border rounded-xl border-gray-300 dark:border-gray-700 dark:bg-slate-800 focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all outline-none"
+                          placeholder="Au moins 6 caractères"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-3 pt-4">
+                        <button
+                          type="submit"
+                          disabled={loading}
+                          className="w-full px-4 py-3 text-white bg-gold-600 rounded-xl hover:bg-gold-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gold-600 shadow-lg hover:shadow-xl font-bold transition-all text-lg disabled:opacity-50 disabled:scale-100 active:scale-95"
+                        >
+                          {loading ? 'Activation en cours...' : 'Activer mon compte'}
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </div>
               )}
 
               {/* Formulaire Membre */}

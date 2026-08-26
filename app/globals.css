@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+/* stylelint-disable-next-line at-rule-no-unknown */
+/* VS Code / Cursor warning suppression for Tailwind v4 */
 @theme {
   --font-sans: var(--font-inter);
   --font-serif: var(--font-playfair);
@@ -33,4 +35,9 @@ body {
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-serif), serif;
+}
+
+/* Hide default leaflet routing machine UI */
+.leaflet-routing-container {
+  display: none !important;
 }

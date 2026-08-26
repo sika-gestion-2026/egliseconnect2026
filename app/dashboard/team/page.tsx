@@ -22,7 +22,7 @@ export default async function TeamPage() {
   // Fetch department leaders
   const { data: leaders } = await supabase
     .from('department_leaders')
-    .select('id, department_id, members(id, first_name, last_name, phone)')
+    .select('id, department_id, members(id, first_name, last_name, phone, photo_url)')
     .order('assigned_at', { ascending: true })
 
   // Fetch all members to allow assignment
@@ -35,7 +35,7 @@ export default async function TeamPage() {
   return (
     <div className="p-8 max-w-6xl mx-auto">
       <h1 className="text-3xl font-serif text-primary-900 dark:text-gold-400 font-bold mb-2">Équipe & Modérateurs</h1>
-      <p className="text-gray-500 mb-8">Créez des départements et assignez des responsables pour déléguer la gestion.</p>
+      <p className="text-gray-500 mb-8">Consultez les départements de votre église et assignez des responsables parmi les membres de chaque groupe.</p>
 
       <TeamDashboardClient 
         departments={departments || []}

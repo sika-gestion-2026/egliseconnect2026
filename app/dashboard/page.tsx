@@ -1,10 +1,11 @@
 import { createClient } from '@/utils/supabase/server'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import GrowthChart from './GrowthChart'
-import QuartierChart from './QuartierChart'
-import AnnouncementEditor from './AnnouncementEditor'
-import RealTimeClock from '../components/RealTimeClock'
+import GrowthChart from '@/components/dashboard/GrowthChart'
+import QuartierChart from '@/components/dashboard/QuartierChart'
+import AnnouncementEditor from '@/components/dashboard/AnnouncementEditor'
+import RealTimeClock from '@/components/RealTimeClock'
+import { calculateBirthdays, calculateAbsentees, Member } from '@/utils/dashboardMetrics'
 
 export default async function ChurchDashboard() {
   const cookieStore = await cookies()
@@ -54,7 +55,7 @@ export default async function ChurchDashboard() {
     .limit(1)
     .single()
 
-  let absentees: any[] = []
+  let absentees: Member[] = []
   let presentCount = 0
   if (lastAttendance) {
     const { data: presentMembers } = await supabase
@@ -65,7 +66,7 @@ export default async function ChurchDashboard() {
     presentCount = presentMembers?.length || 0
     const presentIds = presentMembers?.map(p => p.member_id) || []
 
-    absentees = (allMembers || []).filter(m => !presentIds.includes(m.id))
+    absentees = calculateAbsentees(allMembers as Member[], presentIds)
   }
 
   // Fetch active announcement
@@ -76,35 +77,7 @@ export default async function ChurchDashboard() {
     .eq('is_active', true)
     .single()
 
-  // Calcul des anniversaires
-  const today = new Date()
-  const currentMonth = today.getMonth() // 0-11
-  const currentDate = today.getDate()
-
-  const todaysBirthdays: any[] = []
-  const monthsBirthdays: any[] = []
-
-  if (allMembers) {
-    allMembers.forEach(m => {
-      if (m.birth_date) {
-        // bDate est au format YYYY-MM-DD
-        const parts = m.birth_date.split('-')
-        if (parts.length === 3) {
-          const year = parseInt(parts[0], 10)
-          const month = parseInt(parts[1], 10) - 1
-          const day = parseInt(parts[2], 10)
-          
-          const ageTurning = today.getFullYear() - year
-
-          if (month === currentMonth && day === currentDate) {
-            todaysBirthdays.push({ ...m, ageTurning })
-          } else if (month === currentMonth) {
-            monthsBirthdays.push({ ...m, day })
-          }
-        }
-      }
-    })
-  }
+  const { todaysBirthdays, monthsBirthdays } = calculateBirthdays(allMembers as Member[])
 
   // Nombre de quartiers/groupes distincts
   const quartiersCount = new Set((allMembers || []).map(m => m.quartier).filter(Boolean)).size
@@ -118,10 +91,10 @@ export default async function ChurchDashboard() {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-10 p-8 bg-white dark:bg-slate-800 rounded-xl shadow-sm border-t-4 border-primary-900">
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-10 p-8 bg-white/80 dark:bg-slate-900/60 backdrop-blur-md rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-white/20 dark:border-white/10 border-t-4 border-t-primary-900 hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
         <div className="flex flex-col md:flex-row md:items-start gap-6 flex-1">
           <div className="flex-1">
-            <h1 className="text-4xl font-serif text-primary-900 dark:text-gold-400 font-bold mb-2">{church?.name || 'Tableau de Bord'}</h1>
+            <h1 className="text-4xl font-serif text-transparent bg-clip-text bg-gradient-to-r from-primary-900 to-primary-500 dark:from-gold-400 dark:to-gold-500 font-bold mb-2">{church?.name || 'Tableau de Bord'}</h1>
             <p className="text-gray-500 flex items-center gap-2 flex-wrap">
               <span className="bg-primary-100 text-primary-900 dark:bg-primary-900/30 dark:text-primary-200 px-3 py-1 rounded-md text-sm font-mono font-bold tracking-widest shadow-sm">
                 CODE: {church?.code}
@@ -160,20 +133,20 @@ export default async function ChurchDashboard() {
       </div>
       
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md border-t-4 border-gold-500">
+        <div className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-md p-6 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-white/20 dark:border-white/10 border-t-4 border-t-gold-500 hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
           <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Membres Actifs</h3>
           <p className="text-4xl font-bold mt-2 text-primary-900 dark:text-neutral-50">{membersCount || 0}</p>
         </div>
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md border-t-4 border-accent-500">
+        <div className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-md p-6 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-white/20 dark:border-white/10 border-t-4 border-t-accent-500 hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
           <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Présents (dernier culte)</h3>
           <p className="text-4xl font-bold mt-2 text-accent-900 dark:text-accent-500">{presentCount}</p>
           {lastAttendance && <p className="text-xs text-gray-400 mt-1">le {lastAttendance.date}</p>}
         </div>
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md border-t-4 border-blue-500">
+        <div className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-md p-6 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-white/20 dark:border-white/10 border-t-4 border-t-blue-500 hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
           <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Absents à suivre</h3>
           <p className="text-4xl font-bold mt-2 text-blue-900 dark:text-blue-500">{absentees.length}</p>
         </div>
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md border-t-4 border-purple-500">
+        <div className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-md p-6 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-white/20 dark:border-white/10 border-t-4 border-t-purple-500 hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
           <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Anniversaires (Ce mois)</h3>
           <p className="text-4xl font-bold mt-2 text-purple-900 dark:text-purple-500">{monthsBirthdays.length}</p>
         </div>
@@ -194,7 +167,7 @@ export default async function ChurchDashboard() {
       
       {/* SECTION ANNIVERSAIRES */}
       {todaysBirthdays.length > 0 && (
-        <div className="mb-10 bg-yellow-50/50 dark:bg-yellow-950/10 border border-yellow-200 dark:border-yellow-900/30 rounded-xl p-6 shadow-sm animate-fade-in">
+        <div className="mb-10 bg-yellow-50/50 dark:bg-yellow-950/20 backdrop-blur-md border border-yellow-200 dark:border-yellow-900/30 rounded-xl p-6 shadow-sm animate-fade-in">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2.5 bg-yellow-100 dark:bg-yellow-900/50 rounded-full text-yellow-600 dark:text-yellow-400 text-2xl">
               🎉
@@ -227,7 +200,7 @@ export default async function ChurchDashboard() {
       )}
 
       {monthsBirthdays.length > 0 && (
-        <div className="mb-10 bg-blue-50/20 dark:bg-slate-800/20 border border-gray-150 dark:border-slate-700 rounded-xl p-6 shadow-sm">
+        <div className="mb-10 bg-blue-50/20 dark:bg-slate-800/40 backdrop-blur-md border border-gray-150 dark:border-slate-700/50 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
           <h3 className="text-lg font-serif font-bold text-primary-900 dark:text-gold-400 mb-4 flex items-center gap-2">
             🎂 Anniversaires de ce mois-ci ({new Date().toLocaleString('fr-FR', { month: 'long' })})
           </h3>
@@ -245,7 +218,7 @@ export default async function ChurchDashboard() {
 
       {/* SECTION RADAR DES ABSENTS */}
       {lastAttendance && (
-        <div className="mb-10 bg-red-50/50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 rounded-xl p-6 shadow-sm">
+        <div className="mb-10 bg-red-50/50 dark:bg-red-900/20 backdrop-blur-md border border-red-100 dark:border-red-900/30 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-red-100 dark:bg-red-900/50 rounded-full text-red-600 dark:text-red-400">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>

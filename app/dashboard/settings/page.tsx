@@ -11,6 +11,7 @@ export default async function SettingsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   const { data: profile } = await supabase.from('user_profiles').select('church_id').eq('id', user?.id).single()
   const { data: church } = await supabase.from('churches').select('*').eq('id', profile?.church_id).single()
+  const { data: member } = await supabase.from('members').select('photo_url').eq('id', user?.id).single()
 
   async function updateChurch(formData: FormData) {
     'use server'

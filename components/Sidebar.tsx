@@ -93,7 +93,7 @@ export default function Sidebar({
                 key={item.href} 
                 href={item.href} 
                 onClick={() => setIsOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${isActive ? 'bg-primary-500 text-gold-400 font-bold' : 'hover:bg-primary-800'}`}
+                className={`flex items-center gap-3 px-4 py-3 rounded-md transition-all duration-300 ${isActive ? 'bg-gradient-to-r from-primary-500 to-primary-700 text-gold-400 font-bold border-l-4 border-gold-400 shadow-md' : 'hover:bg-primary-800/50 hover:translate-x-1'}`}
               >
                 {item.icon}
                 {item.name}

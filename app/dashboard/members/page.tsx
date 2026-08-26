@@ -7,7 +7,7 @@ export default async function MembersDirectory(props: { searchParams: Promise<{ 
   const searchParams = await props.searchParams
   const currentPage = Number(searchParams?.page) || 1
   const query = searchParams?.query || ''
-  const groupBy = searchParams?.group || 'quartier'
+  const groupBy = searchParams?.group || 'function'
   const limit = 50
   const offset = (currentPage - 1) * limit
 

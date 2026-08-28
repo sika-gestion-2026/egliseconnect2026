@@ -77,7 +77,7 @@ export default async function ChurchDashboard() {
     .eq('is_active', true)
     .single()
 
-  const { todaysBirthdays, monthsBirthdays } = calculateBirthdays(allMembers as Member[])
+  const { todaysBirthdays, weeksBirthdays, monthsBirthdays } = calculateBirthdays(allMembers as Member[])
 
   // Nombre de quartiers/groupes distincts
   const quartiersCount = new Set((allMembers || []).map(m => m.quartier).filter(Boolean)).size
@@ -210,6 +210,26 @@ export default async function ChurchDashboard() {
                 <span>🎁</span>
                 <span className="font-bold text-gray-800 dark:text-white">{m.first_name} {m.last_name}</span>
                 <span className="text-gray-400 text-xs font-bold bg-gray-100 dark:bg-slate-750 px-2 py-0.5 rounded-md">Le {m.day}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* SECTION ANNIVERSAIRES CETTE SEMAINE */}
+      {weeksBirthdays.length > 0 && (
+        <div className="mb-10 bg-indigo-50/30 dark:bg-slate-800/60 backdrop-blur-md border border-indigo-100 dark:border-slate-700/50 rounded-xl p-6 shadow-sm">
+          <h3 className="text-lg font-serif font-bold text-indigo-900 dark:text-indigo-400 mb-4 flex items-center gap-2">
+            🎈 Anniversaires à venir (7 prochains jours)
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            {weeksBirthdays.map(m => (
+              <div key={m.id} className="bg-white dark:bg-slate-850 p-3 rounded-lg border border-indigo-50 dark:border-slate-700 flex flex-col gap-1 shadow-sm relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-bl-full flex items-start justify-end p-2 opacity-50">
+                  <span className="text-xs">📅</span>
+                </div>
+                <span className="font-bold text-gray-800 dark:text-white relative z-10">{m.first_name} {m.last_name}</span>
+                <span className="text-indigo-600 dark:text-indigo-400 text-xs font-bold relative z-10">Le {m.day} {new Date(new Date().getFullYear(), (m as any).birth_date ? parseInt((m as any).birth_date.split('-')[1])-1 : 0).toLocaleString('fr-FR', {month: 'long'})} ({m.ageTurning} ans)</span>
               </div>
             ))}
           </div>

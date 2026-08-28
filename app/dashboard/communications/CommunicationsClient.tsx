@@ -31,6 +31,12 @@ export default function CommunicationsClient({ members, quartiers }: { members: 
           <select name="target" className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-700">
             <option value="all">Tous les membres ({members.length} membres)</option>
             <option value="absentees">Les absents du dernier culte</option>
+            <optgroup label="Par Département / Groupe">
+              <option value="dept_mutuelle">Tous les membres de la Mutuelle</option>
+              <option value="dept_jeunesse">Groupe de Jeunesse</option>
+              <option value="dept_chorale">Groupe musical (Chant/Instrument)</option>
+              <option value="dept_anciens">Anciens de l'église</option>
+            </optgroup>
             <optgroup label="Par Quartier">
               {quartiers.map((q) => (
                 <option key={q} value={`quartier_${q}`}>Quartier : {q}</option>

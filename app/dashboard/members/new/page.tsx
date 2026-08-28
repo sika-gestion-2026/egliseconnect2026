@@ -98,7 +98,9 @@ export default async function NewMember() {
     'Protocole & Logistique',
     'Intercession / Prière',
     'Enseignement / École du dimanche',
-    'Média / Sono / Communication'
+    'Média / Sono / Communication',
+    'Jeunesse',
+    'Mutuelle'
   ]
 
   return (

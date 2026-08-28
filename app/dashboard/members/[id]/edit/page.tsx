@@ -126,7 +126,9 @@ export default async function EditMember(props: { params: Promise<{ id: string }
     'Protocole & Logistique',
     'Intercession / Prière',
     'Enseignement / École du dimanche',
-    'Média / Sono / Communication'
+    'Média / Sono / Communication',
+    'Jeunesse',
+    'Mutuelle'
   ]
 
   return (

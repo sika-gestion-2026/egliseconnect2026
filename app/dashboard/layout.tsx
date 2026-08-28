@@ -65,6 +65,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
       { name: 'Suivi Pastoral & Visites', href: '/dashboard/visits', icon: visitIcon },
       { name: 'Localisation', href: '/localisation', icon: locIcon }
     ]
+  } else if (profile.role === 'mutual_manager') {
+    navItems = [
+      { name: 'Tableau de bord', href: '/dashboard', icon: dashIcon },
+      { name: 'Annuaire', href: '/dashboard/members', icon: dirIcon },
+      { name: 'Mutuelle', href: '/dashboard/mutuelle', icon: dashIcon },
+      { name: 'Cultes & Pointages', href: '/dashboard/attendance', icon: attIcon },
+      { name: 'Planning & Ouvriers', href: '/dashboard/planning', icon: attIcon },
+      { name: 'Scanner QR', href: '/dashboard/scanner', icon: scannerIcon },
+      { name: 'Suivi Pastoral & Visites', href: '/dashboard/visits', icon: visitIcon },
+      { name: 'Localisation', href: '/localisation', icon: locIcon }
+    ]
   } else {
     // Admin or Super Admin
     navItems = [
@@ -93,9 +104,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
       })
 
       navItems.push({ 
-        name: 'Rapports PDF', 
-        href: '/dashboard/reports', 
-        icon: <AttendanceIcon /> 
+        name: 'Mutuelle', 
+        href: '/dashboard/mutuelle', 
+        icon: <DashboardIcon /> 
       })
       navItems.push({ 
         name: 'Équipe & Modérateurs', 
@@ -114,7 +125,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-background text-foreground">
       <div className="print:hidden h-full">
-        <Sidebar churchName={church?.name || 'Mon Église'} logoUrl={church?.logo_url} navItems={navItems} userEmail={user.email || ''} />
+        <Sidebar 
+          churchName={church?.name || 'Mon Église'} 
+          logoUrl={church?.logo_url} 
+          navItems={navItems} 
+          userEmail={user.email || ''} 
+          isSuperAdmin={profile.role === 'super_admin' || user.email === 'munokolive@gmail.com'}
+        />
       </div>
 
       {/* Main Content */}

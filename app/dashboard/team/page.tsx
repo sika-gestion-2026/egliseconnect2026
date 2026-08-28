@@ -32,6 +32,12 @@ export default async function TeamPage() {
     .eq('church_id', profile.church_id)
     .order('first_name', { ascending: true })
 
+  // Fetch all user accounts for role assignment
+  const { data: userProfiles } = await supabase
+    .from('user_profiles')
+    .select('id, role, email, members(first_name, last_name, photo_url)')
+    .eq('church_id', profile.church_id)
+
   return (
     <div className="p-8 max-w-6xl mx-auto">
       <h1 className="text-3xl font-serif text-primary-900 dark:text-gold-400 font-bold mb-2">Équipe & Modérateurs</h1>
@@ -41,6 +47,7 @@ export default async function TeamPage() {
         departments={departments || []}
         leaders={leaders || []}
         members={members || []}
+        userProfiles={userProfiles || []}
       />
     </div>
   )

@@ -11,17 +11,21 @@ type NavItem = {
   icon: React.ReactNode
 }
 
+interface SidebarProps {
+  churchName: string
+  logoUrl?: string | null
+  navItems: NavItem[]
+  userEmail: string
+  isSuperAdmin?: boolean
+}
+
 export default function Sidebar({ 
   churchName, 
   logoUrl, 
   navItems, 
-  userEmail 
-}: { 
-  churchName: string
-  logoUrl?: string | null
-  navItems: NavItem[]
-  userEmail: string 
-}) {
+  userEmail,
+  isSuperAdmin
+}: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
 
@@ -31,11 +35,9 @@ export default function Sidebar({
       <div className="md:hidden flex items-center justify-between bg-primary-900 text-white p-4">
         <h2 className="text-lg font-serif text-gold-400 truncate font-bold flex items-center gap-2">
           {logoUrl ? (
-            <img src={logoUrl} alt={churchName} className="w-8 h-8 rounded-full object-cover border border-gold-500 flex-shrink-0 animate-fade-in" />
+            <img src={logoUrl} alt={churchName} className="w-8 h-8 rounded-full object-cover border border-gold-500 flex-shrink-0 animate-fade-in bg-white" />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-primary-800 flex items-center justify-center font-bold text-sm text-gold-400 border border-gold-500 flex-shrink-0">
-              ⛪
-            </div>
+            <img src="/logo.png" alt="Église Connect" className="w-8 h-8 rounded-full object-cover border border-gold-500 flex-shrink-0 bg-white" />
           )}
           <span className="truncate">{churchName}</span>
         </h2>
@@ -55,17 +57,15 @@ export default function Sidebar({
       {/* Sidebar */}
       <aside className={`
         fixed inset-y-0 left-0 z-50 w-64 bg-primary-900 text-white flex flex-col border-r-4 border-gold-500 transition-transform duration-300 ease-in-out
-        md:relative md:translate-x-0
+        md:sticky md:top-0 md:h-screen md:translate-x-0
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div className="p-6 border-b border-primary-500 hidden md:block">
           <div className="flex items-center gap-3">
             {logoUrl ? (
-              <img src={logoUrl} alt={churchName} className="w-12 h-12 rounded-full object-cover border-2 border-gold-500 flex-shrink-0 animate-fade-in" />
+              <img src={logoUrl} alt={churchName} className="w-12 h-12 rounded-full object-cover border-2 border-gold-500 flex-shrink-0 animate-fade-in bg-white" />
             ) : (
-              <div className="w-12 h-12 rounded-full bg-primary-800 flex items-center justify-center font-bold text-xl text-gold-400 border-2 border-gold-500 flex-shrink-0">
-                ⛪
-              </div>
+              <img src="/logo.png" alt="Église Connect" className="w-12 h-12 rounded-full object-cover border-2 border-gold-500 flex-shrink-0 bg-white" />
             )}
             <div className="truncate">
               <h2 className="text-lg font-serif text-gold-400 truncate font-bold" title={churchName}>

@@ -5,6 +5,8 @@ import RSVPWidget from './RSVPWidget'
 import NotesWidget from './NotesWidget'
 import DepartmentLeaderWidget from './DepartmentLeaderWidget'
 import PrayerWall from './PrayerWall'
+import WorshipReminder from './WorshipReminder'
+import MutuelleWidget from './MutuelleWidget'
 import { QRCodeSVG } from 'qrcode.react'
 import ScannerModal from './ScannerModal'
 
@@ -12,6 +14,8 @@ type MemberDashboardClientProps = {
   church: any
   memberData: any
   nextService: any
+  upcomingServices?: any[]
+  missedLastService?: any
   currentRsvp: string | null
   initialNotes: any[]
   activeAnnouncement?: any
@@ -23,6 +27,13 @@ type MemberDashboardClientProps = {
   championOfMonth?: any
   championOfYear?: any
   myDepartmentLeaders?: any[]
+  mutuelleData?: {
+    myContribution: number
+    totalFund: number
+    totalExpenses: number
+    recentExpenses: { label: string; amount: number; date: string; description?: string }[]
+    isMember: boolean
+  }
 }
 
 // Function to compute remaining days and hours
@@ -40,7 +51,7 @@ function getRemainingTime(createdAt: string) {
   return `${hours} heure${hours > 1 ? 's' : ''} restante${hours > 1 ? 's' : ''}`
 }
 
-export default function MemberDashboardClient({ church, memberData, nextService, currentRsvp, initialNotes, activeAnnouncement, ledDepartments, stats, birthdaysToday, locationMembers, departmentMembers, championOfMonth, championOfYear, myDepartmentLeaders }: MemberDashboardClientProps) {
+export default function MemberDashboardClient({ church, memberData, nextService, upcomingServices, missedLastService, currentRsvp, initialNotes, activeAnnouncement, ledDepartments, stats, birthdaysToday, locationMembers, departmentMembers, championOfMonth, championOfYear, myDepartmentLeaders, mutuelleData }: MemberDashboardClientProps) {
   const [activeTab, setActiveTab] = useState<'home' | 'notes' | 'departement' | 'communaute' | 'qrcode'>('home')
   const [isScanning, setIsScanning] = useState(false)
 
@@ -156,6 +167,12 @@ export default function MemberDashboardClient({ church, memberData, nextService,
               </button>
             </div>
 
+            {/* 🔔 Rappel culte + alertes avec vibration */}
+            <WorshipReminder
+              upcomingServices={upcomingServices || []}
+              churchName={church?.name || 'votre église'}
+            />
+
             {birthdaysToday && birthdaysToday.length > 0 && (
               <div className="mb-8 bg-gradient-to-r from-pink-500 to-rose-500 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden animate-in zoom-in">
                 <div className="absolute -right-10 -top-10 text-9xl opacity-20 rotate-12">🎂</div>
@@ -257,8 +274,39 @@ export default function MemberDashboardClient({ church, memberData, nextService,
                 </div>
               )}
 
-              {nextService && (
+              {/* 🏦 Widget Mutuelle */}
+              {mutuelleData && (
                 <div className="md:col-span-2">
+                  <MutuelleWidget
+                    myContribution={mutuelleData.myContribution}
+                    totalFund={mutuelleData.totalFund}
+                    totalExpenses={mutuelleData.totalExpenses}
+                    recentExpenses={mutuelleData.recentExpenses}
+                    isMember={mutuelleData.isMember}
+                  />
+                </div>
+              )}
+
+              {missedLastService && (
+                <div className="md:col-span-2 bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/10 border-l-4 border-red-500 rounded-xl p-6 shadow-sm flex items-center justify-between">
+                  <div className="flex items-start gap-4">
+                    <div className="text-3xl">🥺</div>
+                    <div>
+                      <h3 className="text-red-800 dark:text-red-400 font-bold text-lg">Vous nous avez manqué !</h3>
+                      <p className="text-red-700/80 dark:text-red-300/80 text-sm mt-1">
+                        Nous n'avons pas noté votre présence au dernier événement <strong>"{missedLastService.name}"</strong> du <span suppressHydrationWarning>{new Date(missedLastService.service_date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</span>.
+                      </p>
+                      <p className="text-sm font-medium mt-2 text-red-900 dark:text-red-200">
+                        Si vous avez suivi en ligne ou étiez absent, n'hésitez pas à nous le faire savoir !
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {nextService ? (
+                <div className="md:col-span-2 space-y-6">
+                  {/* Prochain Événement Principal (RSVP) */}
                   <RSVPWidget 
                     serviceId={nextService.id}
                     serviceName={nextService.name}
@@ -268,6 +316,56 @@ export default function MemberDashboardClient({ church, memberData, nextService,
                     initialStatus={currentRsvp || undefined}
                     isToday={new Date(nextService.service_date).toDateString() === new Date().toDateString()}
                   />
+                  
+                  {/* Calendrier / Programme de la semaine */}
+                  {upcomingServices && upcomingServices.length > 1 && (
+                    <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-slate-700">
+                      <h3 className="font-serif font-bold text-lg mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+                        <span>🗓️</span> Programme à venir
+                      </h3>
+                      <div className="space-y-3">
+                        {upcomingServices.map((svc, index) => {
+                          const isNext = index === 0; // Le programme en cours / le plus proche
+                          return (
+                            <div 
+                              key={svc.id} 
+                              className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg border ${
+                                isNext 
+                                ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800 shadow-sm relative overflow-hidden' 
+                                : 'bg-gray-50 dark:bg-slate-750/50 border-transparent hover:border-gray-200 dark:hover:border-slate-600'
+                              } transition-colors`}
+                            >
+                              {isNext && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-primary-500 animate-pulse"></div>}
+                              
+                              <div className={`flex items-start gap-4 ${isNext ? 'pl-2' : ''}`}>
+                                <div className={`flex flex-col items-center justify-center min-w-[60px] p-2 rounded-md ${isNext ? 'bg-white dark:bg-slate-800 text-primary-600 shadow-sm' : 'bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-gray-400'}`}>
+                                  <span className="text-xs font-bold uppercase" suppressHydrationWarning>{new Date(svc.service_date).toLocaleDateString('fr-FR', { weekday: 'short' })}</span>
+                                  <span className="text-xl font-black" suppressHydrationWarning>{new Date(svc.service_date).getDate()}</span>
+                                </div>
+                                <div>
+                                  <h4 className={`font-bold ${isNext ? 'text-primary-900 dark:text-gold-400' : 'text-gray-800 dark:text-gray-200'} text-lg`}>
+                                    {svc.name}
+                                  </h4>
+                                  <p className="text-sm text-gray-500 flex items-center gap-2 mt-1">
+                                    <span className="flex items-center gap-1">⏰ {svc.service_time?.substring(0, 5)}</span>
+                                    {isNext && <span className="bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200 text-xs px-2 py-0.5 rounded-full font-bold ml-2 animate-pulse">Bientôt</span>}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="md:col-span-2 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-800 dark:to-slate-800 border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-2xl p-10 text-center flex flex-col items-center justify-center shadow-sm">
+                  <span className="text-5xl opacity-50 mb-4">📅</span>
+                  <h3 className="text-xl font-bold text-gray-500 dark:text-gray-400 mb-2">Aucun événement programmé</h3>
+                  <p className="text-gray-400 dark:text-gray-500 max-w-md mx-auto">
+                    Votre église n'a pas encore planifié son prochain culte ou événement. Revenez plus tard pour confirmer votre présence !
+                  </p>
                 </div>
               )}
               
@@ -317,20 +415,6 @@ export default function MemberDashboardClient({ church, memberData, nextService,
               <div className="md:col-span-2">
                 <PrayerWall />
               </div>
-
-              <div className="bg-blue-50 dark:bg-blue-900/10 p-6 rounded-xl border border-blue-100 dark:border-blue-900/30">
-                <h2 className="text-xl font-bold text-blue-800 dark:text-blue-400 mb-4">Prochains Événements</h2>
-                <div className="text-sm text-gray-700 dark:text-gray-300">
-                  <p className="mb-2">Restez connecté pour connaître les prochains événements de votre église.</p>
-                  {nextService ? (
-                    <p className="font-medium text-blue-900 dark:text-blue-300 mt-4">
-                      Prochain: {nextService.name} le {nextService.service_date}
-                    </p>
-                  ) : (
-                    <p className="text-gray-500">Aucun événement programmé.</p>
-                  )}
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -365,7 +449,10 @@ export default function MemberDashboardClient({ church, memberData, nextService,
                       <div className="relative z-10">
                         <p className="text-[10px] font-bold text-gold-600 uppercase tracking-wider">{item.departmentName}</p>
                         <p className="font-bold text-gray-900 dark:text-white leading-tight">{item.leader.first_name} {item.leader.last_name}</p>
-                        <a href={`tel:${item.leader.phone}`} className="text-xs text-primary-600 hover:underline">{item.leader.phone}</a>
+                        <a href={`tel:${item.leader.phone}`} className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 px-3 py-1.5 rounded-full shadow-sm transition-colors">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                          Appeler
+                        </a>
                       </div>
                     </div>
                   ))}
@@ -385,7 +472,10 @@ export default function MemberDashboardClient({ church, memberData, nextService,
                     )}
                     <div>
                       <p className="font-bold text-gray-900 dark:text-white">{m.first_name} {m.last_name[0]}.</p>
-                      <a href={`tel:${m.phone}`} className="text-xs text-primary-600 hover:underline">{m.phone}</a>
+                      <a href={`tel:${m.phone}`} className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-primary-900 bg-primary-50 hover:bg-primary-100 border border-primary-200 px-3 py-1.5 rounded-full shadow-sm transition-colors dark:bg-primary-900/30 dark:border-primary-800 dark:text-primary-100">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                        Appeler
+                      </a>
                     </div>
                   </div>
                 ))}
@@ -414,7 +504,10 @@ export default function MemberDashboardClient({ church, memberData, nextService,
                     <div>
                       <p className="font-bold text-gray-900 dark:text-white">{m.first_name} {m.last_name[0]}.</p>
                       <p className="text-xs text-gray-500">{m.quartier || m.commune}</p>
-                      <a href={`tel:${m.phone}`} className="text-xs text-green-600 hover:underline">{m.phone}</a>
+                      <a href={`tel:${m.phone}`} className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-green-900 bg-green-50 hover:bg-green-100 border border-green-200 px-3 py-1.5 rounded-full shadow-sm transition-colors dark:bg-green-900/30 dark:border-green-800 dark:text-green-100">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                        Appeler
+                      </a>
                     </div>
                   </div>
                 ))}

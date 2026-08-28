@@ -4,6 +4,7 @@ import "./globals.css";
 import { SuperAdminOmnibox } from "@/components/SuperAdminOmnibox";
 import ToastProvider from "@/components/ToastProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { GodModeWrapper } from "@/components/GodModeWrapper";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -41,6 +42,7 @@ export default function RootLayout({
           {children}
           <SuperAdminOmnibox />
           <ToastProvider />
+          <GodModeWrapper />
         </ThemeProvider>
       </body>
     </html>

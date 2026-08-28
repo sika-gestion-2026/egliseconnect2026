@@ -6,8 +6,8 @@ export default function Home() {
     <div className="min-h-screen bg-neutral-50 dark:bg-background text-primary-900 dark:text-neutral-50 font-sans">
       <main className="flex flex-col items-center justify-center min-h-screen p-8 text-center sm:p-20">
         <Link href="/" className="flex items-center gap-2 mb-6">
-          <div className="w-16 h-16 bg-primary-900 rounded-full flex items-center justify-center text-white border-2 border-gold-500 shadow-sm text-3xl">
-            ⛪
+          <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center border-2 border-gold-500 shadow-xl overflow-hidden">
+            <img src="/logo.png" alt="Église Connect" className="w-full h-full object-cover" />
           </div>
         </Link>
         <h1 className="text-5xl font-bold sm:text-7xl font-serif text-primary-900 dark:text-gold-400">

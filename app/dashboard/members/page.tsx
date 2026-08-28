@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 import { cookies } from 'next/headers'
 import Link from 'next/link'
 import DirectoryClient from './DirectoryClient'
+import ImportButtonWrapper from '@/components/ImportButtonWrapper'
 
 export default async function MembersDirectory(props: { searchParams: Promise<{ page?: string, query?: string, group?: string }> }) {
   const searchParams = await props.searchParams
@@ -82,6 +83,9 @@ export default async function MembersDirectory(props: { searchParams: Promise<{ 
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
               Exporter CSV
             </a>
+          )}
+          {profile?.role !== 'dept_leader' && profile?.church_id && (
+            <ImportButtonWrapper churchId={profile.church_id} />
           )}
           <Link 
             href="/dashboard/members/new" 

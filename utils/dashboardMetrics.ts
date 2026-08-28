@@ -21,7 +21,11 @@ export function calculateBirthdays(members: Member[]) {
   const currentDate = today.getDate();
 
   const todaysBirthdays: BirthdayMember[] = [];
+  const weeksBirthdays: BirthdayMember[] = [];
   const monthsBirthdays: BirthdayMember[] = [];
+
+  const nextWeek = new Date(today);
+  nextWeek.setDate(today.getDate() + 7);
 
   members.forEach(m => {
     if (m.birth_date) {
@@ -33,17 +37,27 @@ export function calculateBirthdays(members: Member[]) {
         const day = parseInt(parts[2], 10);
         
         const ageTurning = today.getFullYear() - year;
+        
+        // Calculate the next birthday date
+        const nextBirthday = new Date(today.getFullYear(), month, day);
+        if (nextBirthday < new Date(today.getFullYear(), today.getMonth(), today.getDate())) {
+          nextBirthday.setFullYear(today.getFullYear() + 1);
+        }
 
         if (month === currentMonth && day === currentDate) {
           todaysBirthdays.push({ ...m, ageTurning });
-        } else if (month === currentMonth) {
+        } else if (nextBirthday > today && nextBirthday <= nextWeek) {
+          weeksBirthdays.push({ ...m, day, ageTurning: nextBirthday.getFullYear() - year });
+        }
+        
+        if (month === currentMonth && (month !== currentMonth || day !== currentDate)) {
           monthsBirthdays.push({ ...m, day });
         }
       }
     }
   });
 
-  return { todaysBirthdays, monthsBirthdays };
+  return { todaysBirthdays, weeksBirthdays, monthsBirthdays };
 }
 
 export function calculateAbsentees(members: Member[], presentIds: string[]) {

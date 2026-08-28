@@ -183,7 +183,7 @@ export default function NotesWidget({ initialNotes, defaultTitle = '' }: { initi
             <div key={note.id} className="bg-white dark:bg-slate-800 rounded-2xl shadow-md p-6 border-t-4 border-orange-400 flex flex-col h-full">
               <div className="flex justify-between items-start mb-4">
                 <h3 className="font-bold text-lg text-gray-900 dark:text-white leading-tight">{note.title}</h3>
-                <span className="text-xs text-gray-400 whitespace-nowrap bg-gray-100 dark:bg-slate-700 px-2 py-1 rounded">
+                <span className="text-xs text-gray-400 whitespace-nowrap bg-gray-100 dark:bg-slate-700 px-2 py-1 rounded" suppressHydrationWarning>
                   {new Date(note.created_at).toLocaleDateString('fr-FR')}
                 </span>
               </div>

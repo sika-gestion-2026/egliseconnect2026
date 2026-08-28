@@ -14,7 +14,9 @@ export default async function MemberDashboard() {
 
   let memberData: any = null;
   let nextService = null;
+  let upcomingServices: any[] = [];
   let currentRsvp = null;
+  let missedLastService = null;
 
   const {
     data: { user },
@@ -66,6 +68,39 @@ export default async function MemberDashboard() {
     .eq("id", targetChurchId)
     .single();
 
+  // Compute recurring upcoming services from worship_days config
+  // even if no church_services rows exist in DB yet
+  const worshipDays: any[] = church?.worship_days || [];
+  const dayMap: Record<string, number> = {
+    'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3,
+    'Thursday': 4, 'Friday': 5, 'Saturday': 6
+  };
+  function computeNextOccurrences(days: any[], count: number) {
+    const result: any[] = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    for (const def of days) {
+      const dayNum = dayMap[def.day];
+      if (dayNum === undefined) continue;
+      const next = new Date(today);
+      const diff = (dayNum - today.getDay() + 7) % 7;
+      next.setDate(today.getDate() + (diff === 0 ? 0 : diff));
+      for (let w = 0; w < Math.ceil(count / days.length) + 1; w++) {
+        const d = new Date(next);
+        d.setDate(next.getDate() + w * 7);
+        result.push({
+          id: `recurring-${def.day}-${w}`,
+          name: def.name || (def.day === 'Sunday' ? "Culte du Dimanche" : "Culte du Jeudi"),
+          service_date: d.toISOString().split('T')[0],
+          service_time: def.start_time || def.time || '09:00',
+          type: 'regular',
+          isRecurring: true,
+        });
+      }
+    }
+    return result.sort((a, b) => a.service_date.localeCompare(b.service_date)).slice(0, count);
+  }
+
   if (targetMemberId) {
     const { data, error } = await supabase.rpc('get_member_secure', {
       p_member_id: targetMemberId
@@ -82,9 +117,10 @@ export default async function MemberDashboard() {
       .eq("church_id", targetChurchId)
       .gte("service_date", getTodayLocalDateString())
       .order("service_date", { ascending: true })
-      .limit(1);
+      .limit(5);
 
     if (services && services.length > 0) {
+      upcomingServices = services;
       nextService = services[0];
 
       // Check if user already RSVP'd
@@ -118,6 +154,35 @@ export default async function MemberDashboard() {
             related_service_id: nextService.id
           });
         }
+      }
+    }
+
+    // Fallback: If no upcoming services in DB, compute from worship_days recurring config
+    if (upcomingServices.length === 0 && worshipDays.length > 0) {
+      upcomingServices = computeNextOccurrences(worshipDays, 8);
+      nextService = upcomingServices[0] || null;
+    }
+
+    // Fetch Last Missed Service
+    const { data: pastServices } = await supabase
+      .from("church_services")
+      .select("*")
+      .eq("church_id", targetChurchId)
+      .lt("service_date", getTodayLocalDateString())
+      .order("service_date", { ascending: false })
+      .limit(1);
+
+    if (pastServices && pastServices.length > 0) {
+      const lastService = pastServices[0];
+      const { data: attendance } = await supabase
+        .from("attendances")
+        .select("id")
+        .eq("service_id", lastService.id)
+        .eq("member_id", targetMemberId)
+        .single();
+        
+      if (!attendance) {
+        missedLastService = lastService;
       }
     }
   }
@@ -372,6 +437,95 @@ export default async function MemberDashboard() {
     if (notifications) myNotifications = notifications;
   }
 
+  // Données Mutuelle
+  let mutuelleData: {
+    myContribution: number;
+    totalFund: number;
+    totalExpenses: number;
+    recentExpenses: { label: string; amount: number; date: string; description?: string }[];
+    isMember: boolean;
+  } = { myContribution: 0, totalFund: 0, totalExpenses: 0, recentExpenses: [], isMember: false };
+
+  if (targetChurchId && targetMemberId) {
+    // Vérifier si le membre est dans la mutuelle
+    const { data: mutuelMember } = await supabase
+      .from('mutual_members')
+      .select('id')
+      .eq('church_id', targetChurchId)
+      .eq('member_id', targetMemberId)
+      .single();
+
+    const isMutuelMember = !!mutuelMember;
+
+    if (isMutuelMember) {
+      const { data: transactions } = await supabase
+        .from('mutual_transactions')
+        .select('*')
+        .eq('church_id', targetChurchId)
+        .order('created_at', { ascending: false });
+
+      let myContribution = 0;
+      let totalFund = 0;
+      let totalExpenses = 0;
+      const recentExpenses: { label: string; amount: number; date: string; description?: string }[] = [];
+
+      (transactions || []).forEach((t: any) => {
+        if (t.type === 'contribution') {
+          totalFund += Number(t.amount);
+          if (t.member_id === targetMemberId) {
+            myContribution += Number(t.amount);
+          }
+        } else if (t.type === 'expense') {
+          totalExpenses += Number(t.amount);
+          recentExpenses.push({
+            label: t.label || t.description || 'Dépense',
+            amount: Number(t.amount),
+            date: t.created_at,
+            description: t.notes || t.reason || undefined,
+          });
+        }
+      });
+
+      mutuelleData = {
+        myContribution,
+        totalFund,
+        totalExpenses,
+        recentExpenses: recentExpenses.slice(0, 10),
+        isMember: true,
+      };
+    } else {
+      mutuelleData = { myContribution: 0, totalFund: 0, totalExpenses: 0, recentExpenses: [], isMember: false };
+    }
+  }
+
+  // Vérifier si le membre a un planning d'ouvrier à voir
+  let hasMyPlanning = false;
+  let hasOuvriersPlanning = false;
+  if (targetMemberId && targetChurchId && upcomingServices.length > 0) {
+    const upcomingIds = upcomingServices
+      .filter(s => !s.isRecurring) // only real DB services
+      .map(s => s.id);
+    
+    if (upcomingIds.length > 0) {
+      // Mon Planning perso : est-ce que je suis assigné à un service à venir ?
+      const { data: myAssignments } = await supabase
+        .from('service_assignments')
+        .select('id')
+        .eq('member_id', targetMemberId)
+        .in('service_id', upcomingIds)
+        .limit(1);
+      hasMyPlanning = (myAssignments?.length || 0) > 0;
+
+      // Programme Ouvriers : est-ce qu'il y a des assignations dans l'église à venir ?
+      const { data: churchAssignments } = await supabase
+        .from('service_assignments')
+        .select('id')
+        .in('service_id', upcomingIds)
+        .limit(1);
+      hasOuvriersPlanning = (churchAssignments?.length || 0) > 0;
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-background p-8 relative overflow-hidden">
       {/* White Label Background Logo */}
@@ -433,12 +587,16 @@ export default async function MemberDashboard() {
 
           <div className="flex flex-col md:items-end gap-3 w-full md:w-auto mt-4 md:mt-0">
             <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-              <a href="/member-dashboard/planning" className="text-xs flex items-center gap-1.5 font-bold text-white bg-primary-900 hover:bg-primary-800 px-3 py-1.5 rounded-md shadow-sm transition-colors whitespace-nowrap">
-                <span>📅</span> Mon Planning
-              </a>
-              <a href="/member-dashboard/public-planning" className="text-xs flex items-center gap-1.5 font-bold text-white bg-purple-600 hover:bg-purple-700 px-3 py-1.5 rounded-md shadow-sm transition-colors whitespace-nowrap">
-                <span>📋</span> Programme Ouvriers
-              </a>
+              {hasMyPlanning && (
+                <a href="/member-dashboard/planning" className="text-xs flex items-center gap-1.5 font-bold text-white bg-primary-900 hover:bg-primary-800 px-3 py-1.5 rounded-md shadow-sm transition-colors whitespace-nowrap">
+                  <span>📅</span> Mon Planning
+                </a>
+              )}
+              {hasOuvriersPlanning && (
+                <a href="/member-dashboard/public-planning" className="text-xs flex items-center gap-1.5 font-bold text-white bg-purple-600 hover:bg-purple-700 px-3 py-1.5 rounded-md shadow-sm transition-colors whitespace-nowrap">
+                  <span>📋</span> Programme Ouvriers
+                </a>
+              )}
               <a href="/localisation" className="text-xs flex items-center gap-1.5 font-bold text-primary-900 bg-primary-50 hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-100 px-3 py-1.5 rounded-md shadow-sm border border-primary-200 dark:border-primary-800 transition-colors whitespace-nowrap">
                 <span>📍</span> M'y rendre
               </a>
@@ -462,6 +620,8 @@ export default async function MemberDashboard() {
           church={church}
           memberData={memberData}
           nextService={nextService}
+          upcomingServices={upcomingServices}
+          missedLastService={missedLastService}
           currentRsvp={currentRsvp}
           initialNotes={initialNotes}
           activeAnnouncement={activeAnnouncement}
@@ -473,6 +633,7 @@ export default async function MemberDashboard() {
           championOfMonth={championOfMonth}
           championOfYear={championOfYear}
           myDepartmentLeaders={myDepartmentLeaders}
+          mutuelleData={mutuelleData}
         />
       </div>
     </div>

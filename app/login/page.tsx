@@ -188,7 +188,17 @@ function LoginContent() {
           <div className="absolute top-0 right-0 w-40 h-40 bg-gold-500/20 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
           <div className="absolute bottom-0 left-0 w-32 h-32 bg-primary-500/30 rounded-full blur-2xl transform -translate-x-1/2 translate-y-1/2"></div>
           
-          <h1 className="text-4xl font-serif text-white mt-2 relative z-10 font-bold tracking-wide">
+          {showSavedProfile && savedProfile?.church_logo ? (
+            <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center border-2 border-gold-500 shadow-xl overflow-hidden relative z-10">
+              <img src={savedProfile.church_logo} alt="Logo Église" className="w-full h-full object-cover" />
+            </div>
+          ) : (
+            <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center border-2 border-gold-500 shadow-xl overflow-hidden relative z-10">
+              <img src="/logo.png" alt="Église Connect" className="w-full h-full object-cover" />
+            </div>
+          )}
+
+          <h1 className="text-4xl font-serif text-white mt-4 relative z-10 font-bold tracking-wide">
             Église Connect
           </h1>
           <p className="mt-2 text-sm font-bold text-gold-400 uppercase tracking-widest relative z-10 bg-black/20 px-3 py-1 rounded-full border border-gold-500/30 shadow-inner">

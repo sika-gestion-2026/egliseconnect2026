@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { revalidatePath } from 'next/cache'
+import MemberQRCode from './MemberQRCode'
 
 export default async function MemberDetailPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -159,6 +160,8 @@ export default async function MemberDetailPage(props: { params: Promise<{ id: st
               <p><span className="font-semibold text-gray-500">Quartier :</span> {member.quartier || 'Non spécifié'}</p>
             </div>
           </div>
+
+          <MemberQRCode memberId={member.id} memberName={`${member.first_name} ${member.last_name}`} />
           
           {/* Accès Espace Fidèle (Surprise) */}
           <div className="bg-gradient-to-br from-primary-900 to-slate-900 rounded-xl shadow-lg p-6 text-white space-y-4 relative overflow-hidden border border-gold-500/30">

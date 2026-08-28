@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import InfiltrateButton from '@/components/InfiltrateButton'
 
 export default function ChurchesTable({ churches }: { churches: any[] }) {
   const [searchTerm, setSearchTerm] = useState('')
@@ -80,10 +81,13 @@ export default function ChurchesTable({ churches }: { churches: any[] }) {
                       {church.status || 'active'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <Link href={`/super-admin/churches/${church.id}`} className="text-xs font-bold text-primary-600 hover:text-primary-800 dark:text-gold-400 dark:hover:text-gold-300 bg-primary-50 hover:bg-primary-100 dark:bg-slate-700 dark:hover:bg-slate-600 px-3 py-1.5 rounded-md transition-all">
-                      Gérer &rarr;
-                    </Link>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center justify-end gap-2">
+                      <InfiltrateButton churchId={church.id} />
+                      <Link href={`/super-admin/churches/${church.id}`} className="text-xs font-bold text-primary-600 hover:text-primary-800 dark:text-gold-400 dark:hover:text-gold-300 bg-primary-50 hover:bg-primary-100 dark:bg-slate-700 dark:hover:bg-slate-600 px-3 py-1.5 rounded-md transition-all flex items-center gap-1 border border-transparent hover:border-primary-200 dark:hover:border-gold-500/30">
+                        ⚙️ Modifier
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))

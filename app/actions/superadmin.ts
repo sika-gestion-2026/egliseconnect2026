@@ -22,7 +22,7 @@ export async function infiltrateChurch(churchId: string) {
     .single()
 
   if (profile?.role !== 'super_admin' && user.email !== 'munokolive@gmail.com') {
-    throw new Error('Non autorisé')
+    return { success: false, error: 'Non autorisé' }
   }
 
   // Mettre à jour le church_id du profil
@@ -33,7 +33,7 @@ export async function infiltrateChurch(churchId: string) {
 
   if (error) {
     console.error('Erreur infiltration:', error)
-    throw new Error('Impossible d\'entrer dans cette église')
+    return { success: false, error: 'Impossible d\'entrer dans cette église' }
   }
 
   redirect('/dashboard')
@@ -45,18 +45,18 @@ export async function deleteChurch(churchId: string) {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    throw new Error('Non authentifié')
+    return { success: false, error: 'Non authentifié' }
   }
 
   const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', user.id).single()
   
   if ((profile?.role !== 'super_admin' && user.email !== 'munokolive@gmail.com') || !user.email?.includes('munokolive')) {
-    throw new Error('Non autorisé')
+    return { success: false, error: 'Non autorisé' }
   }
 
   const { error } = await supabase.from('churches').delete().eq('id', churchId)
 
   if (error) {
-    throw new Error('Erreur de suppression: ' + error.message)
+    return { success: false, error: 'Erreur de suppression: ' + error.message }
   }
 }

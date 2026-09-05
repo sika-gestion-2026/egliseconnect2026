@@ -38,7 +38,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#1e3a8a" />
       </head>
       <body className="antialiased dark:bg-background" suppressHydrationWarning={true}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange>
           {children}
           <SuperAdminOmnibox />
           <ToastProvider />

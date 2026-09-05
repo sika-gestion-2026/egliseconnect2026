@@ -70,7 +70,7 @@ export default function CreateServiceForm() {
             name="name" 
             required
             defaultValue="Culte du Dimanche"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-600 text-gray-900 dark:text-white"
           />
         </div>
         <div className="grid grid-cols-2 gap-4">
@@ -80,7 +80,7 @@ export default function CreateServiceForm() {
               type="date" 
               name="service_date" 
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-600 text-gray-900 dark:text-white"
             />
           </div>
           <div>
@@ -90,7 +90,7 @@ export default function CreateServiceForm() {
               name="service_time" 
               required
               defaultValue="09:30"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-600 text-gray-900 dark:text-white"
             />
           </div>
         </div>

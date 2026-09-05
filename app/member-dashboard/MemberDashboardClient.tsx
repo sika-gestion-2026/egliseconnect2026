@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import RSVPWidget from './RSVPWidget'
 import NotesWidget from './NotesWidget'
 import DepartmentLeaderWidget from './DepartmentLeaderWidget'
@@ -9,6 +9,7 @@ import WorshipReminder from './WorshipReminder'
 import MutuelleWidget from './MutuelleWidget'
 import { QRCodeSVG } from 'qrcode.react'
 import ScannerModal from './ScannerModal'
+import OptimizedAvatar from '@/components/OptimizedAvatar'
 
 type MemberDashboardClientProps = {
   church: any
@@ -58,46 +59,95 @@ export default function MemberDashboardClient({ church, memberData, nextService,
   const today = new Date()
   const jours = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
   const mois = ['Janv.', 'Févr.', 'Mars', 'Avril', 'Mai', 'Juin', 'Juil.', 'Août', 'Sept.', 'Oct.', 'Nov.', 'Déc.']
+
+  // Surprise! If they are the champion, trigger confetti on load.
+  useEffect(() => {
+    if (championOfMonth?.isMe || championOfYear?.isMe) {
+      import('canvas-confetti').then((confetti) => {
+        const duration = 5 * 1000;
+        const animationEnd = Date.now() + duration;
+        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
+
+        const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+        const interval: any = setInterval(function() {
+          const timeLeft = animationEnd - Date.now();
+          if (timeLeft <= 0) return clearInterval(interval);
+          const particleCount = 50 * (timeLeft / duration);
+          confetti.default({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+          confetti.default({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+        }, 250);
+      });
+    }
+  }, [championOfMonth?.isMe, championOfYear?.isMe]);
+  
   
   const defaultNoteTitle = nextService 
     ? `${nextService.name} - ${today.getDate()} ${mois[today.getMonth()]}` 
     : `Notes du ${jours[today.getDay()]} ${today.getDate()} ${mois[today.getMonth()]}`
 
+  const downloadBadge = async () => {
+    const element = document.getElementById('member-badge-card');
+    if (!element) return;
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      // Temporarily add a class to ensure it renders well (white background for transparent areas if needed)
+      const canvas = await html2canvas(element, { 
+        scale: 3, 
+        useCORS: true,
+        backgroundColor: '#ffffff'
+      });
+      const image = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.href = image;
+      link.download = `Badge_${memberData?.first_name || 'Membre'}_${memberData?.last_name || ''}.png`;
+      link.click();
+    } catch (err) {
+      console.error('Erreur lors du téléchargement du badge', err);
+      alert("Impossible de télécharger le badge pour le moment.");
+    }
+  };
+
   return (
     <>
       {/* Tabs */}
-      <div className="flex overflow-x-auto hide-scrollbar bg-white dark:bg-slate-800 rounded-xl p-1 mb-6 shadow-sm border border-gray-100 dark:border-slate-700">
+      <div className="flex w-full bg-white dark:bg-slate-800 rounded-2xl p-1.5 mb-6 shadow-sm border border-gray-100 dark:border-slate-700">
         <button 
           onClick={() => setActiveTab('home')}
-          className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 py-3 px-2 rounded-lg font-medium text-sm transition-colors ${activeTab === 'home' ? 'bg-primary-50 text-primary-900 dark:bg-slate-700 dark:text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-750'}`}
+          className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 px-1 rounded-xl font-medium transition-all duration-200 ${activeTab === 'home' ? 'bg-primary-50 text-primary-900 dark:bg-slate-700 dark:text-white shadow-sm scale-100' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-750 scale-95'}`}
         >
-          <span>🏠</span> Accueil
+          <span className="text-xl sm:text-base">🏠</span> 
+          <span className="text-[10px] sm:text-sm whitespace-nowrap">Accueil</span>
         </button>
         <button 
           onClick={() => setActiveTab('notes')}
-          className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 py-3 px-2 rounded-lg font-medium text-sm transition-colors ${activeTab === 'notes' ? 'bg-primary-50 text-primary-900 dark:bg-slate-700 dark:text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-750'}`}
+          className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 px-1 rounded-xl font-medium transition-all duration-200 ${activeTab === 'notes' ? 'bg-primary-50 text-primary-900 dark:bg-slate-700 dark:text-white shadow-sm scale-100' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-750 scale-95'}`}
         >
-          <span>📖</span> Mes Notes
+          <span className="text-xl sm:text-base">📖</span> 
+          <span className="text-[10px] sm:text-sm whitespace-nowrap">Notes</span>
         </button>
         <button 
           onClick={() => setActiveTab('communaute')}
-          className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 py-3 px-2 rounded-lg font-medium text-sm transition-colors ${activeTab === 'communaute' ? 'bg-primary-50 text-primary-900 dark:bg-slate-700 dark:text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-750'}`}
+          className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 px-1 rounded-xl font-medium transition-all duration-200 ${activeTab === 'communaute' ? 'bg-primary-50 text-primary-900 dark:bg-slate-700 dark:text-white shadow-sm scale-100' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-750 scale-95'}`}
         >
-          <span>🤝</span> Communauté
+          <span className="text-xl sm:text-base">🤝</span> 
+          <span className="text-[10px] sm:text-sm whitespace-nowrap">Communauté</span>
         </button>
         <button 
           onClick={() => setActiveTab('qrcode')}
-          className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 py-3 px-2 rounded-lg font-medium text-sm transition-colors ${activeTab === 'qrcode' ? 'bg-primary-50 text-primary-900 dark:bg-slate-700 dark:text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-750'}`}
+          className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 px-1 rounded-xl font-medium transition-all duration-200 ${activeTab === 'qrcode' ? 'bg-primary-50 text-primary-900 dark:bg-slate-700 dark:text-white shadow-sm scale-100' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-750 scale-95'}`}
         >
-          <span>📱</span> QR Code
+          <span className="text-xl sm:text-base">📱</span> 
+          <span className="text-[10px] sm:text-sm whitespace-nowrap">QR Code</span>
         </button>
         
         {ledDepartments && ledDepartments.length > 0 && (
           <button 
             onClick={() => setActiveTab('departement')}
-            className={`flex-1 min-w-[150px] flex items-center justify-center gap-2 py-3 px-2 rounded-lg font-medium text-sm transition-colors ${activeTab === 'departement' ? 'bg-gold-50 text-gold-900 dark:bg-gold-900/30 dark:text-gold-400 shadow-sm' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-750'}`}
+            className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 px-1 rounded-xl font-medium transition-all duration-200 ${activeTab === 'departement' ? 'bg-gold-50 text-gold-900 dark:bg-gold-900/30 dark:text-gold-400 shadow-sm scale-100' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-750 scale-95'}`}
           >
-            <span>👑</span> Mon Département
+            <span className="text-xl sm:text-base">👑</span> 
+            <span className="text-[10px] sm:text-sm whitespace-nowrap">Département</span>
           </button>
         )}
       </div>
@@ -183,11 +233,13 @@ export default function MemberDashboardClient({ church, memberData, nextService,
                 <div className="flex flex-wrap gap-4 mt-4 relative z-10">
                   {birthdaysToday.map(b => (
                     <div key={b.id} className="flex items-center gap-3 bg-white/20 rounded-xl p-3 backdrop-blur-sm border border-white/30">
-                      {b.photo_url ? (
-                        <img src={b.photo_url} alt={b.first_name} className="w-12 h-12 rounded-full object-cover border-2 border-white" />
-                      ) : (
-                        <div className="w-12 h-12 rounded-full bg-white/30 flex items-center justify-center font-bold text-lg border-2 border-white">{b.first_name?.[0]}</div>
-                      )}
+                      <OptimizedAvatar 
+                        src={b.photo_url} 
+                        alt={b.first_name} 
+                        size={48} 
+                        className="border-2 border-white"
+                        fallbackInitials={b.first_name} 
+                      />
                       <div>
                         <p className="font-bold text-white">{b.first_name} {b.last_name}</p>
                         <a href={`tel:${b.phone}`} className="text-xs text-pink-100 hover:underline">{b.phone}</a>
@@ -233,12 +285,14 @@ export default function MemberDashboardClient({ church, memberData, nextService,
                     {championOfMonth && (
                       <div className={`p-4 rounded-xl flex items-center gap-4 border-2 transition-all ${championOfMonth.isMe ? 'bg-gold-50 border-gold-400 dark:bg-gold-900/20 dark:border-gold-500 shadow-md transform scale-[1.02]' : 'bg-gray-50 border-gray-100 dark:bg-slate-750 dark:border-slate-700'}`}>
                         <div className="relative">
-                          <div className="absolute -top-3 -right-2 text-2xl animate-bounce">👑</div>
-                          {championOfMonth.photo_url ? (
-                            <img src={championOfMonth.photo_url} className="w-16 h-16 rounded-full object-cover border-2 border-gold-400 shadow-sm" />
-                          ) : (
-                            <div className="w-16 h-16 rounded-full bg-gold-100 border-2 border-gold-400 flex items-center justify-center font-bold text-gold-700 text-xl">{championOfMonth.first_name[0]}</div>
-                          )}
+                          <div className="absolute -top-3 -right-2 text-2xl animate-bounce z-10">👑</div>
+                          <OptimizedAvatar 
+                            src={championOfMonth.photo_url} 
+                            alt={championOfMonth.first_name} 
+                            size={64} 
+                            className="border-2 border-gold-400 shadow-sm"
+                            fallbackInitials={championOfMonth.first_name} 
+                          />
                         </div>
                         <div>
                           <p className="text-xs font-bold text-gold-600 uppercase tracking-widest mb-1">Héros du Mois</p>
@@ -254,12 +308,14 @@ export default function MemberDashboardClient({ church, memberData, nextService,
                     {championOfYear && (
                       <div className={`p-4 rounded-xl flex items-center gap-4 border-2 transition-all ${championOfYear.isMe ? 'bg-indigo-50 border-indigo-400 dark:bg-indigo-900/20 dark:border-indigo-500 shadow-md transform scale-[1.02]' : 'bg-gray-50 border-gray-100 dark:bg-slate-750 dark:border-slate-700'}`}>
                         <div className="relative">
-                          <div className="absolute -top-3 -right-2 text-2xl">🌿</div>
-                          {championOfYear.photo_url ? (
-                            <img src={championOfYear.photo_url} className="w-16 h-16 rounded-full object-cover border-2 border-indigo-400 shadow-sm" />
-                          ) : (
-                            <div className="w-16 h-16 rounded-full bg-indigo-100 border-2 border-indigo-400 flex items-center justify-center font-bold text-indigo-700 text-xl">{championOfYear.first_name[0]}</div>
-                          )}
+                          <div className="absolute -top-3 -right-2 text-2xl z-10">🌿</div>
+                          <OptimizedAvatar 
+                            src={championOfYear.photo_url} 
+                            alt={championOfYear.first_name} 
+                            size={64} 
+                            className="border-2 border-indigo-400 shadow-sm"
+                            fallbackInitials={championOfYear.first_name} 
+                          />
                         </div>
                         <div>
                           <p className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-1">Légende de l'Année</p>
@@ -439,12 +495,14 @@ export default function MemberDashboardClient({ church, memberData, nextService,
                     <div key={idx} className="flex items-center gap-4 p-4 border-2 border-gold-200 dark:border-gold-900/50 bg-gold-50/50 dark:bg-gold-900/10 rounded-xl hover:shadow-md transition-shadow relative overflow-hidden">
                       <div className="absolute -right-2 -top-2 text-4xl opacity-10 rotate-12">👑</div>
                       <div className="relative">
-                        {item.leader.photo_url ? (
-                          <img src={item.leader.photo_url} className="w-14 h-14 rounded-full object-cover border-2 border-gold-400 shadow-sm shadow-gold-200" />
-                        ) : (
-                          <div className="w-14 h-14 rounded-full bg-gold-100 border-2 border-gold-400 flex items-center justify-center font-bold text-gold-700 text-lg shadow-sm shadow-gold-200">{item.leader.first_name[0]}</div>
-                        )}
-                        <span className="absolute -bottom-1 -right-1 bg-white rounded-full text-xs shadow-sm">👑</span>
+                        <OptimizedAvatar 
+                          src={item.leader.photo_url} 
+                          alt={item.leader.first_name} 
+                          size={56} 
+                          className="border-2 border-gold-400 shadow-sm shadow-gold-200"
+                          fallbackInitials={item.leader.first_name} 
+                        />
+                        <span className="absolute -bottom-1 -right-1 bg-white rounded-full text-xs shadow-sm z-10">👑</span>
                       </div>
                       <div className="relative z-10">
                         <p className="text-[10px] font-bold text-gold-600 uppercase tracking-wider">{item.departmentName}</p>
@@ -465,11 +523,13 @@ export default function MemberDashboardClient({ church, memberData, nextService,
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {departmentMembers.map(m => (
                   <div key={m.id} className="flex items-center gap-4 p-4 border border-gray-100 dark:border-slate-700 rounded-xl hover:shadow-md transition-shadow">
-                    {m.photo_url ? (
-                      <img src={m.photo_url} className="w-14 h-14 rounded-full object-cover border-2 border-primary-100" />
-                    ) : (
-                      <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-400 text-lg">{m.first_name[0]}</div>
-                    )}
+                    <OptimizedAvatar 
+                      src={m.photo_url} 
+                      alt={m.first_name} 
+                      size={56} 
+                      className="border-2 border-primary-100"
+                      fallbackInitials={m.first_name} 
+                    />
                     <div>
                       <p className="font-bold text-gray-900 dark:text-white">{m.first_name} {m.last_name[0]}.</p>
                       <a href={`tel:${m.phone}`} className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-primary-900 bg-primary-50 hover:bg-primary-100 border border-primary-200 px-3 py-1.5 rounded-full shadow-sm transition-colors dark:bg-primary-900/30 dark:border-primary-800 dark:text-primary-100">
@@ -496,11 +556,13 @@ export default function MemberDashboardClient({ church, memberData, nextService,
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {locationMembers.map(m => (
                   <div key={m.id} className="flex items-center gap-4 p-4 border border-gray-100 dark:border-slate-700 rounded-xl hover:shadow-md transition-shadow">
-                    {m.photo_url ? (
-                      <img src={m.photo_url} className="w-14 h-14 rounded-full object-cover border-2 border-green-100" />
-                    ) : (
-                      <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center font-bold text-green-600 text-lg">{m.first_name[0]}</div>
-                    )}
+                    <OptimizedAvatar 
+                      src={m.photo_url} 
+                      alt={m.first_name} 
+                      size={56} 
+                      className="border-2 border-green-100"
+                      fallbackInitials={m.first_name} 
+                    />
                     <div>
                       <p className="font-bold text-gray-900 dark:text-white">{m.first_name} {m.last_name[0]}.</p>
                       <p className="text-xs text-gray-500">{m.quartier || m.commune}</p>
@@ -518,48 +580,110 @@ export default function MemberDashboardClient({ church, memberData, nextService,
           </div>
         </div>
       ) : activeTab === 'qrcode' ? (
-        <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 animate-in fade-in slide-in-from-bottom-4 duration-300 flex flex-col items-center justify-center text-center">
-          <h2 className="text-3xl font-serif text-primary-900 dark:text-gold-400 font-bold mb-2">
-            Carte de Membre Numérique
-          </h2>
-          <p className="text-gray-500 dark:text-gray-400 mb-10 max-w-md">
-            Présentez ce QR Code à l'équipe d'accueil à l'entrée de l'église pour valider votre présence instantanément.
-          </p>
+        <div className="bg-gray-50 dark:bg-slate-900/50 p-4 sm:p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 animate-in fade-in slide-in-from-bottom-4 duration-300 flex flex-col items-center justify-center">
           
-          <div className="bg-white p-6 rounded-3xl shadow-lg border-4 border-primary-100 dark:border-primary-900/30 relative">
-            <div className="absolute -top-4 -left-4 w-8 h-8 border-t-4 border-l-4 border-primary-500 rounded-tl-xl"></div>
-            <div className="absolute -top-4 -right-4 w-8 h-8 border-t-4 border-r-4 border-primary-500 rounded-tr-xl"></div>
-            <div className="absolute -bottom-4 -left-4 w-8 h-8 border-b-4 border-l-4 border-primary-500 rounded-bl-xl"></div>
-            <div className="absolute -bottom-4 -right-4 w-8 h-8 border-b-4 border-r-4 border-primary-500 rounded-br-xl"></div>
-            
-            {memberData ? (
-              <QRCodeSVG 
-                value={memberData.id}
-                size={250}
-                bgColor={"#ffffff"}
-                fgColor={"#0f172a"}
-                level={"H"}
-                includeMargin={false}
-                imageSettings={church?.logo_url ? {
-                  src: church.logo_url,
-                  x: undefined,
-                  y: undefined,
-                  height: 50,
-                  width: 50,
-                  excavate: true,
-                } : undefined}
-              />
-            ) : (
-              <div className="w-[250px] h-[250px] bg-gray-100 flex items-center justify-center text-gray-400 font-bold p-4">
-                Aucun profil lié
-              </div>
-            )}
+          <div className="flex flex-col sm:flex-row justify-between items-center w-full max-w-md mb-6">
+            <h2 className="text-2xl font-serif text-primary-900 dark:text-gold-400 font-bold mb-4 sm:mb-0">
+              Badge Officiel
+            </h2>
+            <button 
+              onClick={downloadBadge}
+              className="flex items-center gap-2 bg-primary-900 hover:bg-primary-800 text-white px-4 py-2 rounded-full text-sm font-bold shadow-md transition-all hover:shadow-lg hover:-translate-y-0.5"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              Télécharger
+            </button>
           </div>
           
-          <p className="mt-8 text-xl font-bold text-gray-800 dark:text-white">
-            {memberData ? `${memberData.first_name} ${memberData.last_name}` : 'Utilisateur Inconnu'}
+          {/* CARTE DE MEMBRE (ID CARD) */}
+          <div 
+            id="member-badge-card"
+            className="w-full max-w-sm bg-white rounded-[2rem] shadow-2xl overflow-hidden relative border border-gray-100"
+            style={{ aspectRatio: '6/10' }} // Vertical ID card proportion
+          >
+            {/* Header / Top color block */}
+            <div className="h-1/3 bg-gradient-to-br from-primary-900 via-primary-800 to-primary-950 relative">
+              {/* Decorative patterns */}
+              <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '16px 16px' }}></div>
+              <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+              
+              {/* Church Info */}
+              <div className="absolute top-6 left-0 w-full px-6 flex items-center justify-between z-10">
+                <div className="flex items-center gap-3">
+                  {church?.logo_url && (
+                    <div className="w-10 h-10 bg-white rounded-full p-1 shadow-md shrink-0">
+                      <img src={church.logo_url} className="w-full h-full object-cover rounded-full" alt="Logo" crossOrigin="anonymous" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-white font-serif font-bold leading-tight drop-shadow-md line-clamp-2">{church?.name || 'Église Connect'}</p>
+                    <p className="text-primary-200 text-[10px] uppercase tracking-widest font-bold">Membre Officiel</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Photo overlaps header and body */}
+              <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 z-20">
+                <div className="p-1.5 bg-white rounded-full shadow-xl">
+                  {memberData?.photo_url ? (
+                    <img 
+                      src={memberData.photo_url} 
+                      alt="Photo" 
+                      className="w-24 h-24 rounded-full object-cover border-4 border-gray-50"
+                      crossOrigin="anonymous" 
+                    />
+                  ) : (
+                    <div className="w-24 h-24 rounded-full bg-gray-100 border-4 border-gray-50 flex items-center justify-center font-bold text-gray-400 text-3xl">
+                      {memberData?.first_name?.[0]}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="h-2/3 bg-white pt-16 px-6 pb-6 flex flex-col items-center text-center relative z-10">
+              
+              <h3 className="text-2xl font-bold text-gray-900 mb-1 leading-tight">
+                {memberData ? `${memberData.first_name} ${memberData.last_name}` : 'Utilisateur'}
+              </h3>
+              
+              {/* Member role/function */}
+              <div className="inline-block bg-primary-50 text-primary-900 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-6">
+                {ledDepartments && ledDepartments.length > 0 ? 'Responsable' : 'Fidèle'}
+              </div>
+
+              {/* QR Code Container */}
+              <div className="flex-1 w-full flex items-center justify-center">
+                <div className="p-3 bg-white rounded-2xl shadow-[0_0_15px_rgba(0,0,0,0.05)] border border-gray-100">
+                  {memberData ? (
+                    <QRCodeSVG 
+                      value={memberData.id}
+                      size={140}
+                      bgColor={"#ffffff"}
+                      fgColor={"#0f172a"}
+                      level={"Q"}
+                      includeMargin={false}
+                    />
+                  ) : (
+                    <div className="w-[140px] h-[140px] bg-gray-50 flex items-center justify-center text-gray-300 text-xs">N/A</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Footer ID */}
+              <div className="w-full mt-4 pt-4 border-t border-dashed border-gray-200">
+                <p className="text-[10px] text-gray-400 font-mono tracking-widest">
+                  ID: {memberData?.id ? memberData.id.split('-')[0].toUpperCase() : '000000'}
+                </p>
+              </div>
+              
+            </div>
+          </div>
+          
+          <p className="text-sm text-gray-500 mt-6 text-center max-w-xs">
+            Cette carte est strictement personnelle. Présentez-la au scanner de l'église.
           </p>
-          <p className="text-sm font-mono text-gray-400 mt-2">ID: {memberData?.id ? memberData.id.split('-')[0] : 'N/A'}</p>
         </div>
       ) : (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">

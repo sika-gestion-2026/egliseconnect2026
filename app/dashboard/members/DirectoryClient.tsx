@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
+import { Mail, Phone, MessageCircle, MapPin, MoreVertical, Heart, Crown, Briefcase } from 'lucide-react'
 
 interface Member {
   id: string
@@ -169,91 +170,51 @@ export default function DirectoryClient({
   return (
     <div className="space-y-6">
       
-      {/* Barre d'outils et recherche */}
-      <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border shadow-sm space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Barre d'outils et recherche Glassmorphism */}
+      <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-md p-5 md:p-6 rounded-3xl border border-white/80 dark:border-slate-700/50 shadow-sm space-y-4">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
           
           {/* Recherche */}
-          <div className="relative flex-1 max-w-md">
-            <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <div className="relative flex-1 max-w-xl">
+            <span className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             </span>
             <input
               type="text"
               placeholder="Rechercher par nom, prénom ou téléphone..."
               value={searchQuery}
               onChange={handleSearch}
-              className={`w-full pl-10 pr-4 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-700 text-sm focus:ring-2 focus:ring-primary-500 outline-none ${isPending ? 'opacity-50' : ''}`}
+              className={`w-full pl-11 pr-4 py-3 bg-white/80 dark:bg-slate-900/80 border border-gray-200 dark:border-slate-600 rounded-2xl text-gray-900 dark:text-white text-sm font-medium focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all shadow-inner ${isPending ? 'opacity-50' : ''}`}
             />
           </div>
 
-          <div className="flex flex-col md:flex-row items-end md:items-center gap-4">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
             {/* Sélections de classement */}
-            <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Classer par :</span>
-            <div className="flex flex-wrap bg-gray-100 dark:bg-slate-900 p-1 rounded-lg border dark:border-slate-700 gap-1">
-              <button
-                onClick={() => handleGroupChange('function')}
-                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-                  groupBy === 'function'
-                    ? 'bg-primary-900 text-white shadow-sm'
-                    : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                🛠️ Département
-              </button>
-              <button
-                onClick={() => handleGroupChange('quartier')}
-                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-                  groupBy === 'quartier'
-                    ? 'bg-primary-900 text-white shadow-sm'
-                    : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                🏘️ Quartier
-              </button>
-              <button
-                onClick={() => handleGroupChange('status')}
-                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-                  groupBy === 'status'
-                    ? 'bg-primary-900 text-white shadow-sm'
-                    : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                🏷️ Statut
-              </button>
-              <button
-                onClick={() => handleGroupChange('birthday')}
-                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-                  groupBy === 'birthday'
-                    ? 'bg-primary-900 text-white shadow-sm'
-                    : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                🎂 Anniversaire
-              </button>
-              <button
-                onClick={() => handleGroupChange('gender')}
-                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-                  groupBy === 'gender'
-                    ? 'bg-primary-900 text-white shadow-sm'
-                    : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                🚻 Genre
-              </button>
-              <button
-                onClick={() => handleGroupChange('marital')}
-                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-                  groupBy === 'marital'
-                    ? 'bg-primary-900 text-white shadow-sm'
-                    : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                💍 Matrimonial
-              </button>
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 whitespace-nowrap">Classer par :</span>
+              <div className="flex flex-wrap bg-gray-100/50 dark:bg-slate-900/50 backdrop-blur-sm p-1.5 rounded-2xl border border-gray-200/50 dark:border-slate-700/50 gap-1.5">
+                {[
+                  { id: 'function', icon: '🛠️', label: 'Département' },
+                  { id: 'quartier', icon: '🏘️', label: 'Quartier' },
+                  { id: 'status', icon: '🏷️', label: 'Statut' },
+                  { id: 'birthday', icon: '🎂', label: 'Anniversaire' },
+                  { id: 'gender', icon: '🚻', label: 'Genre' },
+                  { id: 'marital', icon: '💍', label: 'Matrimonial' }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => handleGroupChange(tab.id as any)}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-300 ${
+                      groupBy === tab.id
+                        ? 'bg-white dark:bg-slate-700 text-primary-700 dark:text-primary-300 shadow-md shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-slate-600'
+                        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50 dark:hover:text-white dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <span className="mr-1.5">{tab.icon}</span>{tab.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
           </div>
 
         </div>
@@ -270,120 +231,154 @@ export default function DirectoryClient({
             <div key={groupKey} className="space-y-4">
               
               {/* Titre du groupe */}
-              <div className="flex items-center gap-3">
-                <h3 className="text-lg font-serif font-bold text-primary-900 dark:text-gold-400 uppercase tracking-wide">
+              <div className="flex items-center gap-4 py-2">
+                <h3 className="text-xl font-serif font-bold text-gray-900 dark:text-white uppercase tracking-wider">
                   {groupKey}
                 </h3>
-                <span className="px-2.5 py-0.5 bg-primary-50 text-primary-900 dark:bg-slate-700 dark:text-gold-400 rounded-full text-xs font-bold border border-primary-100 dark:border-slate-650">
+                <span className="px-3 py-1 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm text-gray-600 dark:text-gray-300 rounded-full text-xs font-bold border border-gray-200/50 dark:border-slate-700/50 shadow-sm">
                   {grouped[groupKey].length} {grouped[groupKey].length > 1 ? 'membres' : 'membre'}
                 </span>
-                <div className="flex-1 h-px bg-gray-200 dark:bg-slate-750"></div>
+                <div className="flex-1 h-px bg-gradient-to-r from-gray-200 to-transparent dark:from-slate-700 dark:to-transparent"></div>
               </div>
 
               {/* Liste des cartes du groupe */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {grouped[groupKey].map((member) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                {grouped[groupKey].map((member, index) => {
+                  const isLeader = member.user_profiles?.[0]?.role === 'dept_leader' || member.user_profiles?.[0]?.role === 'admin';
+                  
+                  return (
                   <div 
                     onClick={() => router.push(`/dashboard/members/${member.id}`)}
                     key={member.id} 
-                    className={`bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden border ${
-                      member.user_profiles?.[0]?.role === 'dept_leader' || member.user_profiles?.[0]?.role === 'admin'
-                        ? 'border-gold-400/50 dark:border-gold-500/50 hover:shadow-[0_0_15px_rgba(251,191,36,0.2)]'
-                        : 'border-gray-100 dark:border-slate-700 hover:shadow-md hover:border-primary-300'
-                    } transition-all cursor-pointer group p-4 flex flex-col gap-3 relative`}
+                    className={`bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] dark:hover:shadow-[0_20px_40px_rgb(0,0,0,0.3)] overflow-hidden border ${
+                      isLeader
+                        ? 'border-gold-300 dark:border-gold-500/50 hover:border-gold-400 dark:hover:border-gold-400'
+                        : 'border-white/80 dark:border-slate-700/50 hover:border-primary-300 dark:hover:border-primary-500/50'
+                    } transition-all duration-500 cursor-pointer group flex flex-col relative animate-in fade-in slide-in-from-bottom-8`}
+                    style={{ animationFillMode: 'both', animationDelay: `${index * 50}ms`, transform: 'perspective(1000px)' }}
                   >
                     {/* Glowing effect background for leaders */}
-                    {(member.user_profiles?.[0]?.role === 'dept_leader' || member.user_profiles?.[0]?.role === 'admin') && (
-                      <div className="absolute -top-10 -right-10 w-24 h-24 bg-gold-400/10 dark:bg-gold-500/10 blur-xl rounded-full pointer-events-none"></div>
+                    {isLeader && (
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-gold-400/20 dark:bg-gold-500/10 blur-2xl rounded-full pointer-events-none transition-all group-hover:bg-gold-400/30"></div>
                     )}
                     
-                    <div className="flex items-start gap-4">
-                      {/* Photo ou initiales avec auréole pour les responsables */}
-                      {member.photo_url ? (
-                        <img 
-                          src={member.photo_url} 
-                          alt="" 
-                          className={`w-12 h-12 rounded-full object-cover shadow-sm flex-shrink-0 group-hover:scale-105 transition-all duration-300 ${
-                            member.user_profiles?.[0]?.role === 'dept_leader' || member.user_profiles?.[0]?.role === 'admin'
-                              ? 'ring-2 ring-gold-400 ring-offset-2 dark:ring-offset-slate-800 shadow-[0_0_15px_rgba(251,191,36,0.6)]'
-                              : ''
-                          }`}
-                        />
-                      ) : (
-                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-serif font-bold shadow-sm flex-shrink-0 transition-all duration-300 ${
-                          member.user_profiles?.[0]?.role === 'dept_leader' || member.user_profiles?.[0]?.role === 'admin'
-                            ? 'bg-gradient-to-br from-gold-400 to-amber-600 ring-2 ring-gold-400 ring-offset-2 dark:ring-offset-slate-800 shadow-[0_0_15px_rgba(251,191,36,0.6)]'
-                            : 'bg-gold-500'
-                        }`}>
-                          {member.first_name?.[0]}{member.last_name?.[0]}
-                        </div>
-                      )}
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start gap-2">
-                          <h4 className={`font-bold text-sm leading-tight truncate ${
-                            member.user_profiles?.[0]?.role === 'dept_leader' || member.user_profiles?.[0]?.role === 'admin'
-                              ? 'text-gold-600 dark:text-gold-400'
-                              : 'text-gray-900 dark:text-white'
+                    <div className="p-5 flex-1 flex flex-col gap-4">
+                      <div className="flex items-start gap-4">
+                        {/* Photo ou initiales avec auréole pour les responsables */}
+                        {member.photo_url ? (
+                          <img 
+                            src={member.photo_url} 
+                            alt="" 
+                            className={`w-14 h-14 rounded-2xl object-cover shadow-md flex-shrink-0 group-hover:scale-105 group-hover:rotate-3 transition-transform duration-300 ${
+                              isLeader
+                                ? 'ring-2 ring-gold-400 ring-offset-2 dark:ring-offset-slate-800'
+                                : ''
+                            }`}
+                          />
+                        ) : (
+                          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white text-xl font-serif font-bold shadow-md flex-shrink-0 transition-transform duration-300 group-hover:scale-105 group-hover:-rotate-3 ${
+                            isLeader
+                              ? 'bg-gradient-to-br from-gold-400 to-amber-600 ring-2 ring-gold-400 ring-offset-2 dark:ring-offset-slate-800'
+                              : 'bg-gradient-to-br from-primary-500 to-primary-700'
+                          }`}>
+                            {member.first_name?.[0]}{member.last_name?.[0]}
+                          </div>
+                        )}
+                        
+                        <div className="flex-1 min-w-0 pt-1">
+                          <h4 className={`font-bold text-lg leading-tight truncate transition-colors duration-300 ${
+                            isLeader
+                              ? 'text-gold-700 dark:text-gold-400 group-hover:text-gold-600 dark:group-hover:text-gold-300'
+                              : 'text-gray-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400'
                           }`}>
                             {member.first_name} {member.last_name}
                           </h4>
-                          <div className="flex flex-col gap-1 items-end">
-                            {member.needs_support && (
-                              <span className="flex-shrink-0 text-[9px] font-bold uppercase tracking-wider text-red-600 bg-red-50 dark:bg-red-950/20 px-1.5 py-0.5 rounded-full border border-red-100 dark:border-red-900/30">
-                                Suivi
-                              </span>
-                            )}
-                            {(member.user_profiles?.[0]?.role === 'dept_leader' || member.user_profiles?.[0]?.role === 'admin') && (
-                              <span className="flex-shrink-0 text-[9px] font-bold uppercase tracking-wider text-gold-700 bg-gold-50 dark:text-gold-300 dark:bg-gold-900/30 px-1.5 py-0.5 rounded-full border border-gold-200 dark:border-gold-700/50 shadow-[0_0_8px_rgba(251,191,36,0.3)]">
-                                👑 Responsable
-                              </span>
-                            )}
-                          </div>
+                          <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest block mt-1 truncate bg-gray-100 dark:bg-slate-800/50 inline-block px-2 py-0.5 rounded-full border border-gray-200/50 dark:border-slate-700/50">
+                            {getStatusLabel(member.status)}
+                          </span>
                         </div>
-                        <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest block mt-0.5 truncate">
-                          {getStatusLabel(member.status)}
-                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap gap-1.5">
+                        {member.needs_support && (
+                          <span className="inline-flex text-[10px] font-bold uppercase tracking-wider text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/30 px-2 py-1 rounded-lg border border-red-100 dark:border-red-900/30 items-center gap-1">
+                            <span>❤️</span> En Suivi
+                          </span>
+                        )}
+                        {isLeader && (
+                          <span className="inline-flex text-[10px] font-bold uppercase tracking-wider text-gold-700 bg-gold-50 dark:text-gold-300 dark:bg-gold-900/30 px-2 py-1 rounded-lg border border-gold-200 dark:border-gold-700/50 items-center gap-1 shadow-sm">
+                            <span>👑</span> Responsable
+                          </span>
+                        )}
+                      </div>
+                      
+                      <div className="space-y-2 text-xs text-gray-700 dark:text-gray-300 mt-auto bg-gray-50/80 dark:bg-slate-950/40 p-4 rounded-2xl border border-gray-100 dark:border-slate-800/50 shadow-inner">
+                        {member.profession && (
+                          <p className="flex items-center gap-2.5 truncate font-medium">
+                            <Briefcase size={14} className="text-gray-400 dark:text-gray-500" /> <span className="truncate">{member.profession}</span>
+                          </p>
+                        )}
+                        {member.commune && (
+                          <p className="flex items-center gap-2.5 truncate font-medium">
+                            <MapPin size={14} className="text-gray-400 dark:text-gray-500" /> <span className="truncate">{member.commune} {member.quartier ? `(${member.quartier})` : ''}</span>
+                          </p>
+                        )}
+                        {!member.profession && !member.commune && (
+                          <p className="text-gray-400 dark:text-gray-500 italic text-center text-xs my-2">Profil incomplet</p>
+                        )}
                       </div>
                     </div>
                     
-                    <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
-                      {member.profession && (
-                        <p className="flex items-center gap-2 truncate">
-                          💼 <span className="truncate">{member.profession}</span>
-                        </p>
-                      )}
-                      {member.commune && (
-                        <p className="flex items-center gap-2 truncate">
-                          📍 <span className="truncate">{member.commune} {member.quartier ? `(${member.quartier})` : ''}</span>
-                        </p>
-                      )}
-                    </div>
-                    
-                    <div className="pt-2 mt-auto border-t dark:border-slate-750 flex gap-2">
+                    <div className="px-4 pb-4 pt-0 flex gap-2" onClick={e => e.stopPropagation()}>
                       {member.phone && (
-                        <button 
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            window.location.href = `tel:${member.phone}`
-                          }} 
-                          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-green-50 hover:bg-green-100 text-green-700 dark:bg-green-900/20 dark:hover:bg-green-900/40 dark:text-green-400 rounded-md transition-colors text-xs font-bold border border-green-200 dark:border-green-800"
-                        >
-                          📞 Appeler
-                        </button>
+                        <>
+                          <button 
+                            type="button"
+                            title="WhatsApp"
+                            onClick={(e) => {
+                              e.preventDefault()
+                              let phone = member.phone?.replace(/[^0-9]/g, '') || ''
+                              window.open(`https://wa.me/${phone}`, '_blank')
+                            }} 
+                            className="flex-1 flex items-center justify-center bg-green-50 hover:bg-green-100 text-green-600 dark:bg-green-900/30 dark:hover:bg-green-900/60 dark:text-green-400 rounded-xl transition-all shadow-sm hover:shadow-md hover:-translate-y-1 border border-green-200 dark:border-green-800/50"
+                          >
+                            <MessageCircle size={18} />
+                          </button>
+                          <button 
+                            type="button"
+                            title="SMS"
+                            onClick={(e) => {
+                              e.preventDefault()
+                              window.location.href = `sms:${member.phone}`
+                            }} 
+                            className="flex-1 flex items-center justify-center bg-blue-50 hover:bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:hover:bg-blue-900/60 dark:text-blue-400 rounded-xl transition-all shadow-sm hover:shadow-md hover:-translate-y-1 border border-blue-200 dark:border-blue-800/50"
+                          >
+                            <Mail size={18} />
+                          </button>
+                          <button 
+                            type="button"
+                            title="Appeler"
+                            onClick={(e) => {
+                              e.preventDefault()
+                              window.location.href = `tel:${member.phone}`
+                            }} 
+                            className="flex-1 flex items-center justify-center bg-indigo-50 hover:bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/60 dark:text-indigo-400 rounded-xl transition-all shadow-sm hover:shadow-md hover:-translate-y-1 border border-indigo-200 dark:border-indigo-800/50"
+                          >
+                            <Phone size={18} />
+                          </button>
+                        </>
                       )}
                       <Link 
                         href={`/dashboard/visits`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:hover:bg-amber-900/40 dark:text-amber-400 rounded-md transition-colors text-xs font-bold border border-amber-200 dark:border-amber-800"
+                        className="flex-[2] flex items-center justify-center gap-2 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-800 dark:from-slate-700 dark:to-slate-600 dark:hover:from-slate-600 dark:hover:to-slate-500 dark:text-white rounded-xl transition-all shadow-sm hover:shadow-md hover:-translate-y-1 text-xs font-bold border border-gray-200 dark:border-slate-600/50"
                       >
-                        ✝️ {member.phone ? 'Visite' : 'Demander visite'}
+                        <Heart size={14} className="text-red-500" />
+                        <span>Visite</span>
                       </Link>
                     </div>
                   </div>
-                ))}
+                  )
+                })}
               </div>
 
             </div>

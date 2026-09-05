@@ -401,20 +401,13 @@ function LoginContent() {
                         />
                       </div>
                       
-                      <div>
-                        <label htmlFor="reg-password" className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                          Créer votre mot de passe
-                        </label>
-                        <input
-                          id="reg-password"
-                          name="password"
-                          type="password"
-                          required
-                          minLength={6}
-                          className="w-full px-4 py-3 mt-1 border rounded-xl border-gray-300 dark:border-gray-700 dark:bg-slate-800 focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all outline-none"
-                          placeholder="Au moins 6 caractères"
-                        />
-                      </div>
+                      <PasswordInput 
+                        id="reg-password"
+                        name="password"
+                        label="Créer votre mot de passe"
+                        placeholder="Au moins 6 caractères"
+                        minLength={6}
+                      />
 
                       <div className="flex flex-col gap-3 pt-4">
                         <button

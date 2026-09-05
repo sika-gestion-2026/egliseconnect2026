@@ -24,9 +24,13 @@ export async function assignVolunteer(serviceId: string, memberId: string, role:
 
   const { data: profile } = await supabase
     .from('user_profiles')
-    .select('church_id')
+    .select('church_id, role')
     .eq('id', user.id)
     .single()
+
+  if (!profile || !['super_admin', 'church_admin', 'moderator', 'dept_leader'].includes(profile.role)) {
+    return { error: 'Non autorisé à assigner des rôles.' }
+  }
 
   const adminClient = createAdminClient()
   const client = adminClient || supabase
@@ -98,6 +102,11 @@ export async function removeAssignment(assignmentId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Non autorisé' }
 
+  const { data: profileForCheck } = await supabase.from('user_profiles').select('role').eq('id', user.id).single()
+  if (!profileForCheck || !['super_admin', 'church_admin', 'moderator', 'dept_leader'].includes(profileForCheck.role)) {
+    return { error: 'Non autorisé à retirer une assignation.' }
+  }
+
   // Fetch assignment before deleting
   const { data: existing } = await supabase
     .from('service_assignments')
@@ -147,6 +156,11 @@ export async function updateAssignmentStatus(
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Non autorisé' }
+
+  const { data: profileForCheck } = await supabase.from('user_profiles').select('role').eq('id', user.id).single()
+  if (!profileForCheck || !['super_admin', 'church_admin', 'moderator', 'dept_leader'].includes(profileForCheck.role)) {
+    return { error: 'Non autorisé à modifier le statut.' }
+  }
 
   const payload: any = { status }
   if (status === 'replaced' && replacementMemberId) {
@@ -198,6 +212,13 @@ export async function refuseAssignment(assignmentId: string, reason: string) {
   const adminClient = createAdminClient()
   const client = adminClient || supabase
 
+  // Fetch assignment details for notification
+  const { data: assignment } = await client
+    .from('service_assignments')
+    .select('church_id, role, member_id, members!member_id(first_name, last_name)')
+    .eq('id', assignmentId)
+    .single()
+
   const { error } = await client
     .from('service_assignments')
     .update({ status: 'absent', refusal_reason: reason })
@@ -208,8 +229,109 @@ export async function refuseAssignment(assignmentId: string, reason: string) {
     return { error: 'Erreur lors du refus' }
   }
 
+  // Notify admins
+  if (assignment && assignment.church_id) {
+    const { data: admins } = await client
+      .from('user_profiles')
+      .select('member_id')
+      .eq('church_id', assignment.church_id)
+      .in('role', ['super_admin', 'church_admin', 'moderator', 'dept_leader'])
+      .not('member_id', 'is', null)
+    
+    if (admins && admins.length > 0) {
+      const memberName = assignment.members ? `${(assignment.members as any).first_name} ${(assignment.members as any).last_name}` : 'Un ouvrier'
+      
+      const adminNotifs = admins.map(a => ({
+        recipient_member_id: a.member_id,
+        church_id: assignment.church_id,
+        type: 'removal', // using existing icon mapping for alert
+        title: '⚠️ Désistement au Planning',
+        body: `${memberName} a décliné son service de ${assignment.role}. Motif : ${reason}`,
+        is_read: false
+      }))
+
+      await client.from('notifications').insert(adminNotifs)
+    }
+  }
+
   revalidatePath('/dashboard/planning')
   revalidatePath('/member-dashboard/planning')
+  revalidatePath('/member-dashboard')
+  return { success: true }
+}
+
+// Send a manual reminder notification
+export async function sendReminderNotification(assignmentId: string) {
+  const cookieStore = await cookies()
+  const supabase = createClient(cookieStore)
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non autorisé' }
+
+  // Fetch assignment, service, and member details
+  const { data: assignment } = await supabase
+    .from('service_assignments')
+    .select('member_id, role, service_id, church_services(name, service_date, service_time)')
+    .eq('id', assignmentId)
+    .single()
+
+  if (!assignment) return { error: 'Assignation non trouvée' }
+
+  const svc = assignment.church_services as any
+  const { data: profile } = await supabase.from('user_profiles').select('church_id').eq('id', user.id).single()
+  
+  if (svc && profile?.church_id) {
+    const adminClient = createAdminClient()
+    const client = adminClient || supabase
+
+    const dateFormatted = new Date(svc.service_date + 'T00:00:00').toLocaleDateString('fr-FR', {
+      weekday: 'long', day: 'numeric', month: 'long'
+    })
+    const timeFormatted = svc.service_time?.substring(0, 5)
+
+    // Insert reminder notification
+    const { error } = await client.from('notifications').insert({
+      recipient_member_id: assignment.member_id,
+      church_id: profile.church_id,
+      type: 'reminder',
+      title: `🔔 RAPPEL : Service de ${assignment.role}`,
+      body: `Ceci est un rappel pour votre service à la ${assignment.role} le ${dateFormatted} à ${timeFormatted} pour le culte "${svc.name}". N'oubliez pas !`,
+      related_service_id: assignment.service_id,
+      related_assignment_id: assignmentId
+    })
+
+    if (error) {
+      console.error("Reminder error", error)
+      return { error: 'Erreur lors de l\'envoi du rappel' }
+    }
+  }
+
+  return { success: true }
+}
+
+// RSVP to a service (Present / Absent)
+export async function rsvpService(serviceId: string, status: 'present' | 'absent', memberId: string) {
+  const cookieStore = await cookies()
+  const supabase = createClient(cookieStore)
+
+  const adminClient = createAdminClient()
+  const client = adminClient || supabase
+
+  // Upsert the declaration
+  const { error } = await client
+    .from('service_declarations')
+    .upsert({
+      service_id: serviceId,
+      member_id: memberId,
+      status: status
+    }, { onConflict: 'service_id,member_id' })
+
+  if (error) {
+    console.error("RSVP error", error)
+    return { error: 'Erreur lors de la confirmation' }
+  }
+
+  revalidatePath('/dashboard/attendance')
   revalidatePath('/member-dashboard')
   return { success: true }
 }

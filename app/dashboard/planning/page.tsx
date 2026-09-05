@@ -35,9 +35,20 @@ export default async function PlanningPage() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-serif text-primary-900 dark:text-gold-400 font-bold">Planning & Ouvriers</h1>
-        <p className="text-gray-500 mt-2">Gérez les plannings des équipes (Louange, Accueil, Technique) pour vos cultes et événements.</p>
+      {/* Premium Header */}
+      <div className="relative mb-12 rounded-3xl overflow-hidden bg-gradient-to-br from-indigo-900 via-primary-800 to-indigo-900 p-8 sm:p-10 text-white shadow-2xl">
+        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-10 mix-blend-overlay pointer-events-none"></div>
+        <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary-500 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob"></div>
+        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-2000"></div>
+        
+        <div className="relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
+          <div>
+            <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-2">Planning & Ouvriers</h1>
+            <p className="text-primary-100 text-lg font-medium opacity-90 max-w-xl">
+              Gérez les plannings des équipes (Louange, Accueil, Technique) pour vos cultes et événements.
+            </p>
+          </div>
+        </div>
       </div>
 
       <PlanningClient 

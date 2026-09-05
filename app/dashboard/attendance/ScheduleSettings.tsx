@@ -160,7 +160,7 @@ export default function ScheduleSettings({ services = [] }: ScheduleSettingsProp
                   type="text"
                   value={editingService.name}
                   onChange={e => setEditingService({ ...editingService, name: e.target.value })}
-                  className="w-full p-2.5 border rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-500 dark:bg-slate-900 dark:border-slate-700"
+                  className="w-full p-2.5 border rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-500 dark:bg-slate-900 text-gray-900 dark:text-white dark:border-slate-700"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -170,7 +170,7 @@ export default function ScheduleSettings({ services = [] }: ScheduleSettingsProp
                     type="date"
                     value={editingService.service_date}
                     onChange={e => setEditingService({ ...editingService, service_date: e.target.value })}
-                    className="w-full p-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-primary-500 dark:bg-slate-900 dark:border-slate-700"
+                    className="w-full p-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-primary-500 dark:bg-slate-900 text-gray-900 dark:text-white dark:border-slate-700"
                   />
                 </div>
                 <div>
@@ -179,7 +179,7 @@ export default function ScheduleSettings({ services = [] }: ScheduleSettingsProp
                     type="time"
                     value={editingService.service_time.substring(0, 5)}
                     onChange={e => setEditingService({ ...editingService, service_time: e.target.value })}
-                    className="w-full p-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-primary-500 dark:bg-slate-900 dark:border-slate-700"
+                    className="w-full p-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-primary-500 dark:bg-slate-900 text-gray-900 dark:text-white dark:border-slate-700"
                   />
                 </div>
               </div>
@@ -188,7 +188,7 @@ export default function ScheduleSettings({ services = [] }: ScheduleSettingsProp
                 <select
                   value={editingService.type}
                   onChange={e => setEditingService({ ...editingService, type: e.target.value })}
-                  className="w-full p-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-primary-500 dark:bg-slate-900 dark:border-slate-700"
+                  className="w-full p-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-primary-500 dark:bg-slate-900 text-gray-900 dark:text-white dark:border-slate-700"
                 >
                   {TYPE_OPTIONS.map(t => (
                     <option key={t.value} value={t.value}>{t.emoji} {t.label}</option>
@@ -240,26 +240,26 @@ export default function ScheduleSettings({ services = [] }: ScheduleSettingsProp
                       <div>
                         <label className="text-xs font-bold text-gray-500 uppercase">Thème du Programme</label>
                         <input type="text" value={day.name || ''} onChange={(e) => updateDay(index, 'name', e.target.value)}
-                          className="w-full mt-1 p-2 bg-white dark:bg-slate-800 border rounded-lg text-sm font-medium focus:ring-2 focus:ring-primary-500"
+                          className="w-full mt-1 p-2 bg-white dark:bg-slate-800 text-gray-900 dark:text-white border rounded-lg text-sm font-medium focus:ring-2 focus:ring-primary-500"
                           placeholder="Ex: Jeudi Solution" />
                       </div>
                       <div className="flex gap-3">
                         <div className="flex-1">
                           <label className="text-xs font-bold text-gray-500 uppercase">Jour</label>
                           <select value={day.day} onChange={(e) => updateDay(index, 'day', e.target.value)}
-                            className="w-full mt-1 p-2 bg-white dark:bg-slate-800 border rounded-lg text-sm focus:ring-2 focus:ring-primary-500">
+                            className="w-full mt-1 p-2 bg-white dark:bg-slate-800 text-gray-900 dark:text-white border rounded-lg text-sm focus:ring-2 focus:ring-primary-500">
                             {DAYS_OF_WEEK.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
                           </select>
                         </div>
                         <div className="w-24">
                           <label className="text-xs font-bold text-gray-500 uppercase">Début</label>
                           <input type="time" value={day.start_time || day.time || ''} onChange={(e) => updateDay(index, 'start_time', e.target.value)}
-                            className="w-full mt-1 p-2 bg-white dark:bg-slate-800 border rounded-lg text-sm focus:ring-2 focus:ring-primary-500" />
+                            className="w-full mt-1 p-2 bg-white dark:bg-slate-800 text-gray-900 dark:text-white border rounded-lg text-sm focus:ring-2 focus:ring-primary-500" />
                         </div>
                         <div className="w-24">
                           <label className="text-xs font-bold text-gray-500 uppercase">Fin</label>
                           <input type="time" value={day.end_time || ''} onChange={(e) => updateDay(index, 'end_time', e.target.value)}
-                            className="w-full mt-1 p-2 bg-white dark:bg-slate-800 border rounded-lg text-sm focus:ring-2 focus:ring-primary-500" />
+                            className="w-full mt-1 p-2 bg-white dark:bg-slate-800 text-gray-900 dark:text-white border rounded-lg text-sm focus:ring-2 focus:ring-primary-500" />
                         </div>
                         <button onClick={() => removeDay(index)}
                           className="self-end mb-0.5 text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 w-9 h-9 rounded-lg flex items-center justify-center transition-colors text-lg">
@@ -281,7 +281,7 @@ export default function ScheduleSettings({ services = [] }: ScheduleSettingsProp
                 <div className="flex items-center gap-3 w-full sm:w-auto text-sm text-gray-500">
                   <span>Période :</span>
                   <select value={generateMonths} onChange={(e) => setGenerateMonths(Number(e.target.value))}
-                    className="p-2 border rounded-lg bg-gray-50 dark:bg-slate-900 font-bold focus:ring-2 focus:ring-primary-500 cursor-pointer">
+                    className="p-2 border rounded-lg bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white font-bold focus:ring-2 focus:ring-primary-500 cursor-pointer">
                     <option value={1}>1 mois</option>
                     <option value={3}>3 mois</option>
                     <option value={6}>6 mois</option>
@@ -373,24 +373,24 @@ export function ServiceCardActions({ service }: { service: Service }) {
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Thème</label>
                 <input type="text" value={editingService.name} onChange={e => setEditingService({ ...editingService, name: e.target.value })}
-                  className="w-full p-2.5 border rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-500 dark:bg-slate-900 dark:border-slate-700" />
+                  className="w-full p-2.5 border rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-500 dark:bg-slate-900 text-gray-900 dark:text-white dark:border-slate-700" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Date</label>
                   <input type="date" value={editingService.service_date} onChange={e => setEditingService({ ...editingService, service_date: e.target.value })}
-                    className="w-full p-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-primary-500 dark:bg-slate-900 dark:border-slate-700" />
+                    className="w-full p-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-primary-500 dark:bg-slate-900 text-gray-900 dark:text-white dark:border-slate-700" />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Heure</label>
                   <input type="time" value={editingService.service_time.substring(0, 5)} onChange={e => setEditingService({ ...editingService, service_time: e.target.value })}
-                    className="w-full p-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-primary-500 dark:bg-slate-900 dark:border-slate-700" />
+                    className="w-full p-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-primary-500 dark:bg-slate-900 text-gray-900 dark:text-white dark:border-slate-700" />
                 </div>
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Type</label>
                 <select value={editingService.type} onChange={e => setEditingService({ ...editingService, type: e.target.value })}
-                  className="w-full p-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-primary-500 dark:bg-slate-900 dark:border-slate-700">
+                  className="w-full p-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-primary-500 dark:bg-slate-900 text-gray-900 dark:text-white dark:border-slate-700">
                   {TYPE_OPTIONS.map(t => <option key={t.value} value={t.value}>{t.emoji} {t.label}</option>)}
                 </select>
               </div>

@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* stylelint-disable-next-line at-rule-no-unknown */
 /* VS Code / Cursor warning suppression for Tailwind v4 */
 @theme {
@@ -18,12 +20,12 @@
 
 @layer base {
   :root {
-    --background: var(--color-neutral-50);
-    --foreground: var(--color-neutral-900);
+    --background: #FAF8F3;
+    --foreground: #0B2E6B;
   }
   .dark {
     --background: #061026; /* Bleu nuit presque noir */
-    --foreground: var(--color-neutral-50);
+    --foreground: #FAF8F3;
   }
 }
 

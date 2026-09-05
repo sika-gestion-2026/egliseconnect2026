@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { markNotificationsRead } from '@/app/actions/planning'
 
 interface Notification {
@@ -11,6 +11,8 @@ interface Notification {
   is_read: boolean
   created_at: string
   related_assignment_id?: string
+  related_service_id?: string
+  recipient_member_id: string
 }
 
 export default function NotificationBell({ notifications }: { notifications: Notification[] }) {
@@ -19,8 +21,34 @@ export default function NotificationBell({ notifications }: { notifications: Not
   const [refusingId, setRefusingId] = useState<string | null>(null)
   const [reason, setReason] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-
+  
   const unread = items.filter(n => !n.is_read)
+  const unreadReminders = unread.filter(n => n.type === 'service_reminder')
+
+  // Request vibration for unread notifications if they are unread and just loaded
+  useEffect(() => {
+    if (unreadReminders.length > 0) {
+      let interval: NodeJS.Timeout
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        // Repeated vibration to force attention until they read the notifications
+        interval = setInterval(() => {
+          try {
+            navigator.vibrate([300, 100, 300, 100, 300])
+          } catch (e) {
+            console.log('Vibration not supported or blocked')
+          }
+        }, 5000) // Vibrate every 5 seconds!
+        
+        // Initial vibration
+        try {
+          navigator.vibrate([300, 100, 300])
+        } catch (e) {}
+      }
+      return () => {
+        if (interval) clearInterval(interval)
+      }
+    }
+  }, [unreadReminders.length])
 
   const handleOpen = async () => {
     setOpen(prev => !prev)
@@ -152,9 +180,42 @@ export default function NotificationBell({ notifications }: { notifications: Not
                             )}
                           </div>
                         )}
+                        
+                        {n.type === 'service_reminder' && n.related_service_id && (
+                          <div className="mt-3 flex gap-2">
+                            <button
+                              disabled={isSubmitting}
+                              onClick={async (e) => {
+                                e.stopPropagation()
+                                setIsSubmitting(true)
+                                const { rsvpService } = await import('@/app/actions/planning')
+                                await rsvpService(n.related_service_id!, 'present', n.recipient_member_id)
+                                setItems(prev => prev.filter(item => item.id !== n.id))
+                                setIsSubmitting(false)
+                              }}
+                              className="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors shadow-sm"
+                            >
+                              Je serai présent
+                            </button>
+                            <button
+                              disabled={isSubmitting}
+                              onClick={async (e) => {
+                                e.stopPropagation()
+                                setIsSubmitting(true)
+                                const { rsvpService } = await import('@/app/actions/planning')
+                                await rsvpService(n.related_service_id!, 'absent', n.recipient_member_id)
+                                setItems(prev => prev.filter(item => item.id !== n.id))
+                                setIsSubmitting(false)
+                              }}
+                              className="flex-1 bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-800 dark:text-gray-200 text-xs font-bold px-3 py-2 rounded-lg transition-colors shadow-sm"
+                            >
+                              Je serai absent
+                            </button>
+                          </div>
+                        )}
                       </div>
                       {!n.is_read && (
-                        <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-1.5" />
+                        <span className="w-3 h-3 rounded-full bg-red-500 flex-shrink-0 mt-1.5 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
                       )}
                     </div>
                   </div>

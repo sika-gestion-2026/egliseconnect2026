@@ -2,27 +2,42 @@
 import { useState } from 'react'
 import Link from 'next/link'
 
-export function PasswordInput() {
+interface PasswordInputProps {
+  id?: string
+  name?: string
+  label?: string
+  placeholder?: string
+  minLength?: number
+}
+
+export function PasswordInput({
+  id = "password",
+  name = "password",
+  label = "Mot de passe",
+  placeholder = "••••••••",
+  minLength
+}: PasswordInputProps = {}) {
   const [showPassword, setShowPassword] = useState(false)
 
   return (
     <div>
-      <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-        Mot de passe
+      <label htmlFor={id} className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+        {label}
       </label>
       <div className="relative mt-1">
         <input
-          id="password"
-          name="password"
+          id={id}
+          name={name}
           type={showPassword ? "text" : "password"}
           required
-          className="w-full px-4 py-3 border rounded-md border-gray-300 dark:border-gray-700 dark:bg-slate-800 focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-shadow pr-12"
-          placeholder="••••••••"
+          minLength={minLength}
+          className="w-full px-4 py-3 border rounded-xl border-gray-300 dark:border-gray-700 dark:bg-slate-800 focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-shadow pr-12 outline-none relative z-0"
+          placeholder={placeholder}
         />
         <button
           type="button"
           onClick={() => setShowPassword(!showPassword)}
-          className="absolute inset-y-0 right-0 flex items-center px-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none"
+          className="absolute inset-y-0 right-0 flex items-center px-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none z-10 cursor-pointer"
           title={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
         >
           {showPassword ? (

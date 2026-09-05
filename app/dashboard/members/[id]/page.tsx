@@ -11,16 +11,30 @@ export default async function MemberDetailPage(props: { params: Promise<{ id: st
   const supabase = createClient(cookieStore)
 
   const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('user_profiles').select('church_id, churches(code)').eq('id', user?.id).single()
+  const { data: profile } = await supabase.from('user_profiles').select('church_id, role, churches(code)').eq('id', user?.id).single()
 
-  const { data: member } = await supabase
+  let memberQuery = supabase
     .from('members')
     .select('*')
     .eq('id', params.id)
-    .eq('church_id', profile?.church_id)
-    .single()
+    
+  if (profile?.role !== 'super_admin' && profile?.church_id) {
+    memberQuery = memberQuery.eq('church_id', profile.church_id)
+  }
 
-  if (!member) notFound()
+  const { data: member, error } = await memberQuery.single()
+
+  if (!member || error) {
+    console.error("Member not found error:", error, "ID:", params.id, "Church:", profile?.church_id);
+    return (
+      <div className="p-8 text-center text-red-500">
+        <h2>Erreur 404: Membre non trouvé</h2>
+        <p>ID cherché: {params.id}</p>
+        <p>Détail de l'erreur: {error?.message || "Aucune donnée"}</p>
+        <Link href="/dashboard/members" className="text-blue-500 underline mt-4 inline-block">Retour à l'annuaire</Link>
+      </div>
+    )
+  }
 
   // Calculer l'âge et vérifier si c'est son anniversaire aujourd'hui
   let age = null

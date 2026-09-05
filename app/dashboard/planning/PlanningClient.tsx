@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { assignVolunteer, removeAssignment, sendReminderNotification } from '@/app/actions/planning'
+import { assignVolunteer, removeAssignment, sendReminderNotification, sendAllReminders } from '@/app/actions/planning'
 import { QRCodeSVG } from 'qrcode.react'
 import toast from 'react-hot-toast'
 import {
@@ -15,23 +15,31 @@ import {
   ChevronDown,
   X,
   UserPlus,
-  Bell
+  Bell,
+  Zap
 } from 'lucide-react'
 
 interface PlanningClientProps {
   events: any[]
   assignments: any[]
   members: any[]
+  leaderboardData?: { member_id: string; name: string; photo: string; count: number }[]
 }
 
 const ROLES = ['Louange', 'Accueil', 'Technique/Régie', 'Modération', 'Sécurité']
 
-export default function PlanningClient({ events, assignments: initialAssignments, members }: PlanningClientProps) {
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell
+} from 'recharts'
+
+export default function PlanningClient({ events, assignments: initialAssignments, members, leaderboardData = [] }: PlanningClientProps) {
   const router = useRouter()
   const [selectedEvent, setSelectedEvent] = useState(events[0]?.id || '')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [remindingId, setRemindingId] = useState<string | null>(null)
+  const [isRemindingAll, setIsRemindingAll] = useState(false)
   const [showQRModal, setShowQRModal] = useState(false)
+  const [showTeamSheetModal, setShowTeamSheetModal] = useState(false)
   const [assignments, setAssignments] = useState(initialAssignments)
 
   // Custom Combobox state
@@ -140,6 +148,28 @@ export default function PlanningClient({ events, assignments: initialAssignments
           background: '#333',
           color: '#fff',
         },
+      })
+    }
+  }
+
+  const handleSendAllReminders = async () => {
+    if (!activeEvent) return
+    setIsRemindingAll(true)
+    
+    const toastId = toast.loading('Envoi des rappels en cours...', {
+      style: { borderRadius: '10px', background: '#333', color: '#fff' }
+    })
+    
+    const res = await sendAllReminders(activeEvent.id)
+    setIsRemindingAll(false)
+    
+    if (res.error) {
+      toast.error(res.error, { id: toastId })
+    } else {
+      toast.success('Tous les ouvriers ont été notifiés !', { 
+        id: toastId, 
+        icon: '⚡',
+        style: { borderRadius: '10px', background: '#333', color: '#fff' }
       })
     }
   }
@@ -274,19 +304,37 @@ export default function PlanningClient({ events, assignments: initialAssignments
                 </div>
               </div>
               
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3 print:hidden">
+                <button 
+                  onClick={handleSendAllReminders}
+                  disabled={isRemindingAll}
+                  className="group flex items-center gap-2 text-sm font-bold bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl transition-all shadow-md disabled:opacity-50"
+                >
+                  {isRemindingAll ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  ) : (
+                    <Bell size={16} className="group-hover:animate-[wiggle_1s_ease-in-out_infinite]" />
+                  )}
+                  Rappeler l'équipe (30 min)
+                </button>
+                <button 
+                  onClick={() => setShowTeamSheetModal(true)}
+                  className="group flex items-center gap-2 text-sm font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2.5 rounded-xl transition-all shadow-md"
+                >
+                  <Users size={16} /> Fiche Équipe
+                </button>
                 <button 
                   onClick={() => setShowQRModal(true)}
                   className="group relative flex items-center gap-2 text-sm font-bold bg-white dark:bg-slate-700 text-gray-800 dark:text-white px-4 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-600 transition-all shadow-sm border border-gray-200 dark:border-white/10"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 rounded-xl opacity-0 group-hover:opacity-10 transition-opacity"></div>
-                  <span className="text-green-500">📱</span> Afficher QR Code
+                  <span className="text-green-500">📱</span> QR Code
                 </button>
                 <button 
                   onClick={exportPDF}
                   className="group flex items-center gap-2 text-sm font-bold bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-4 py-2.5 rounded-xl hover:bg-gray-800 dark:hover:bg-gray-100 transition-all shadow-md"
                 >
-                  <Printer size={16} /> Exporter
+                  <Printer size={16} /> Imprimer
                 </button>
               </div>
             </div>
@@ -299,8 +347,7 @@ export default function PlanningClient({ events, assignments: initialAssignments
 
                 return (
                   <div key={role} className="bg-white/60 dark:bg-slate-900/40 rounded-2xl border border-gray-200/50 dark:border-white/5 overflow-hidden backdrop-blur-md shadow-sm transition-all hover:shadow-md">
-                    {/* Role Header */}
-                    <div className="bg-gradient-to-r from-gray-50/80 to-white/80 dark:from-slate-800/80 dark:to-slate-900/80 p-5 border-b border-gray-100 dark:border-white/5 flex justify-between items-center relative backdrop-blur-md">
+                    <div className="bg-gradient-to-r from-gray-50/80 to-white/80 dark:from-slate-800/80 dark:to-slate-900/80 p-5 border-b border-gray-100 dark:border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative backdrop-blur-md">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500/10 to-indigo-500/10 dark:from-primary-900/50 dark:to-indigo-900/50 flex items-center justify-center text-primary-600 dark:text-primary-400 shadow-inner border border-primary-500/20">
                           <Users size={20} />
@@ -319,9 +366,9 @@ export default function PlanningClient({ events, assignments: initialAssignments
                             setSearchQuery('')
                           }}
                           disabled={isSubmitting}
-                          className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold px-4 py-2 rounded-xl transition-all shadow-sm disabled:opacity-50"
+                          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-black px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5 disabled:opacity-50 border border-blue-500 ring-2 ring-blue-500/20"
                         >
-                          <UserPlus size={16} /> Assigner
+                          <UserPlus size={18} /> Assigner
                         </button>
 
                         {/* Custom Combobox Dropdown */}
@@ -344,9 +391,17 @@ export default function PlanningClient({ events, assignments: initialAssignments
                               {filteredMembers.length === 0 ? (
                                 <div className="p-4 text-center text-sm text-gray-500">Aucun membre trouvé</div>
                               ) : (
-                                filteredMembers.map(m => {
+                                [...filteredMembers].sort((a, b) => {
+                                  // Sort members: those whose functions include the role name go first
+                                  const aMatch = a.functions?.toLowerCase().includes(role.toLowerCase()) || a.functions?.toLowerCase().includes(role.split('/')[0].toLowerCase())
+                                  const bMatch = b.functions?.toLowerCase().includes(role.toLowerCase()) || b.functions?.toLowerCase().includes(role.split('/')[0].toLowerCase())
+                                  if (aMatch && !bMatch) return -1
+                                  if (!aMatch && bMatch) return 1
+                                  return 0
+                                }).map(m => {
                                   // Check if already assigned to this role
                                   const isAssigned = roleAssignments.some(a => a.member_id === m.id)
+                                  const isDepartmentMatch = m.functions?.toLowerCase().includes(role.toLowerCase()) || m.functions?.toLowerCase().includes(role.split('/')[0].toLowerCase())
                                   return (
                                     <button
                                       key={m.id}
@@ -369,6 +424,9 @@ export default function PlanningClient({ events, assignments: initialAssignments
                                         <div className="text-sm font-bold text-gray-900 dark:text-white truncate">
                                           {m.first_name} {m.last_name}
                                         </div>
+                                        {isDepartmentMatch && (
+                                          <div className="text-[10px] text-green-600 font-bold bg-green-100 dark:bg-green-900/30 px-1.5 py-0.5 rounded inline-block mt-0.5">Recommandé (Département)</div>
+                                        )}
                                       </div>
                                       {isAssigned && <CheckCircle2 size={16} className="text-primary-500" />}
                                     </button>
@@ -453,6 +511,41 @@ export default function PlanningClient({ events, assignments: initialAssignments
             </div>
           </div>
         )}
+        
+        {/* Gamification / Leaderboard Section */}
+        {leaderboardData && leaderboardData.length > 0 && (
+          <div className="mt-8 bg-white/40 dark:bg-slate-800/40 backdrop-blur-xl rounded-3xl p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-white/50 dark:border-white/10 print:hidden">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-xl flex items-center justify-center text-white shadow-lg">
+                <span className="text-2xl">🏆</span>
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Palmarès des Ouvriers</h2>
+                <p className="text-sm text-gray-500">Les serviteurs les plus engagés (historique complet)</p>
+              </div>
+            </div>
+            
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={leaderboardData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                  <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                  <Tooltip 
+                    cursor={{fill: 'transparent'}}
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
+                  />
+                  <Bar dataKey="count" radius={[6, 6, 0, 0]} maxBarSize={60}>
+                    {
+                      leaderboardData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={index === 0 ? '#f59e0b' : index === 1 ? '#94a3b8' : index === 2 ? '#b45309' : '#4f46e5'} />
+                      ))
+                    }
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* QR Code Modal for Printing */}
@@ -498,6 +591,84 @@ export default function PlanningClient({ events, assignments: initialAssignments
               >
                 <Printer size={20} /> Lancer l'impression
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Team Sheet Modal (Fiche Équipe) */}
+      {showTeamSheetModal && activeEvent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 print:bg-white print:p-0 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto relative print:shadow-none print:max-w-none shadow-2xl">
+            <div className="sticky top-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-6 border-b border-gray-100 dark:border-white/10 flex justify-between items-center z-20 print:hidden">
+              <h2 className="text-2xl font-black text-gray-900 dark:text-white">Fiche de l'Équipe</h2>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => window.print()}
+                  className="bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 px-4 rounded-xl flex items-center gap-2 transition-colors"
+                >
+                  <Printer size={16} /> Imprimer
+                </button>
+                <button 
+                  onClick={() => setShowTeamSheetModal(false)}
+                  className="w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-600 dark:text-white rounded-xl transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-8 md:p-12 print:p-0">
+              <div className="text-center mb-10 border-b-2 border-primary-500 pb-6 inline-block w-full">
+                <h1 className="text-4xl font-black mb-2 text-gray-900 dark:text-white uppercase tracking-widest">{activeEvent.name}</h1>
+                <p className="text-xl text-primary-600 font-bold">
+                  {new Date(activeEvent.service_date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} - {activeEvent.service_time?.substring(0, 5)}
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 print:grid-cols-2">
+                {ROLES.map(role => {
+                  const roleAssignments = eventAssignments.filter(a => a.role === role)
+                  if (roleAssignments.length === 0) return null
+
+                  return (
+                    <div key={role} className="mb-6 break-inside-avoid">
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white border-b border-gray-200 dark:border-slate-700 pb-2 mb-4 flex items-center gap-2">
+                        <Users size={18} className="text-primary-500" />
+                        {role}
+                        <span className="text-xs bg-gray-100 dark:bg-slate-800 text-gray-500 px-2 py-1 rounded-full ml-auto">
+                          {roleAssignments.length}
+                        </span>
+                      </h3>
+                      <ul className="space-y-3">
+                        {roleAssignments.map(assignment => (
+                          <li key={assignment.id} className="flex items-center gap-3">
+                            {assignment.members?.photo_url ? (
+                              <img src={assignment.members.photo_url} className="w-10 h-10 rounded-full object-cover shadow-sm border border-gray-100 dark:border-slate-700" alt="" />
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-primary-50 dark:bg-slate-800 text-primary-600 dark:text-white flex items-center justify-center font-bold text-sm shadow-sm">
+                                {assignment.members?.first_name?.[0]}{assignment.members?.last_name?.[0]}
+                              </div>
+                            )}
+                            <div>
+                              <div className="font-bold text-gray-900 dark:text-white">
+                                {assignment.members?.first_name} {assignment.members?.last_name}
+                              </div>
+                              <div className="text-[10px] text-gray-500 uppercase tracking-wider">
+                                {assignment.status === 'present' ? 'Confirmé' : assignment.status === 'replaced' ? 'Remplacé' : assignment.status === 'absent' ? 'Absent' : 'En attente'}
+                              </div>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )
+                })}
+              </div>
+
+              <div className="mt-12 text-center text-sm text-gray-400 print:block">
+                Généré par Église Connect le {new Date().toLocaleDateString('fr-FR')}
+              </div>
             </div>
           </div>
         </div>

@@ -26,12 +26,43 @@ export default async function PlanningPage() {
     .select('*, members(first_name, last_name, photo_url), replacement_member_id')
     .in('service_id', eventIds)
 
-  // Fetch all active members to assign
+  // Fetch all active members to assign, including their functions (departments)
   const { data: members } = await supabase
     .from('members')
-    .select('id, first_name, last_name, photo_url')
+    .select('id, first_name, last_name, photo_url, functions')
     .eq('church_id', profile?.church_id)
     .order('first_name')
+
+  // Fetch ALL assignments for the leaderboard (past and present)
+  // We need to join with church_services to ensure we only count assignments for this church
+  const { data: allAssignmentsRaw } = await supabase
+    .from('service_assignments')
+    .select('member_id, status, church_services!inner(church_id)')
+    .eq('church_services.church_id', profile?.church_id)
+    
+  // Calculate Leaderboard: count of 'present' assignments per member
+  const leaderboardStats: Record<string, number> = {}
+  if (allAssignmentsRaw) {
+    allAssignmentsRaw.forEach((a: any) => {
+      if (a.status === 'present' || a.status === 'pending') { // Counting assignments 
+        leaderboardStats[a.member_id] = (leaderboardStats[a.member_id] || 0) + 1
+      }
+    })
+  }
+
+  // Format Leaderboard Data for Recharts
+  const leaderboardData = Object.entries(leaderboardStats)
+    .map(([memberId, count]) => {
+      const member = members?.find(m => m.id === memberId)
+      return {
+        member_id: memberId,
+        name: member ? `${member.first_name} ${member.last_name}` : 'Inconnu',
+        photo: member?.photo_url,
+        count
+      }
+    })
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10) // Top 10
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -55,6 +86,7 @@ export default async function PlanningPage() {
         events={events || []} 
         assignments={assignments || []} 
         members={members || []} 
+        leaderboardData={leaderboardData}
       />
     </div>
   )

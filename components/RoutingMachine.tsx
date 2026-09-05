@@ -6,7 +6,7 @@ import 'leaflet-routing-machine';
 interface RoutingMachineProps {
   userLocation: { lat: number; lng: number };
   churchLocation: { lat: number; lng: number };
-  onRouteFound?: (routeInfo: { distance: string; time: string }) => void;
+  onRouteFound?: (routeInfo: { distance: string; time: string; rawDistance: number; rawTime: number }) => void;
 }
 
 export default function RoutingMachine({ userLocation, churchLocation, onRouteFound }: RoutingMachineProps) {
@@ -59,7 +59,12 @@ export default function RoutingMachine({ userLocation, churchLocation, onRouteFo
         timeStr += `${timeMinutes} min`;
         
         if (onRouteFound) {
-          onRouteFound({ distance: distanceKm, time: timeStr });
+          onRouteFound({ 
+            distance: distanceKm, 
+            time: timeStr, 
+            rawDistance: summary.totalDistance, // in meters
+            rawTime: summary.totalTime // in seconds
+          });
         }
       }
     });

@@ -293,9 +293,9 @@ export async function sendReminderNotification(assignmentId: string) {
     const { error } = await client.from('notifications').insert({
       recipient_member_id: assignment.member_id,
       church_id: profile.church_id,
-      type: 'reminder',
-      title: `🔔 RAPPEL : Service de ${assignment.role}`,
-      body: `Ceci est un rappel pour votre service à la ${assignment.role} le ${dateFormatted} à ${timeFormatted} pour le culte "${svc.name}". N'oubliez pas !`,
+      type: 'assignment', // changed from 'reminder' to avoid check constraint error
+      title: `🔔 RAPPEL 30 MIN : Service de ${assignment.role}`,
+      body: `Le culte "${svc.name}" approche à grands pas ! Soyez prêt(e) pour votre service de ${assignment.role} dans environ 30 minutes.`,
       related_service_id: assignment.service_id,
       related_assignment_id: assignmentId
     })
@@ -304,6 +304,56 @@ export async function sendReminderNotification(assignmentId: string) {
       console.error("Reminder error", error)
       return { error: 'Erreur lors de l\'envoi du rappel' }
     }
+  }
+
+  return { success: true }
+}
+
+// Send reminder to all assigned workers for a service
+export async function sendAllReminders(serviceId: string) {
+  const cookieStore = await cookies()
+  const supabase = createClient(cookieStore)
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non autorisé' }
+
+  const { data: profile } = await supabase.from('user_profiles').select('church_id, role').eq('id', user.id).single()
+  if (!profile || !['super_admin', 'church_admin', 'moderator', 'dept_leader'].includes(profile.role)) {
+    return { error: 'Non autorisé' }
+  }
+
+  // Fetch all assignments for this service
+  const { data: assignments } = await supabase
+    .from('service_assignments')
+    .select('id, member_id, role, church_services(name, service_date, service_time)')
+    .eq('service_id', serviceId)
+
+  if (!assignments || assignments.length === 0) return { error: 'Aucun ouvrier à rappeler.' }
+
+  const svc = assignments[0].church_services as any
+  const dateFormatted = new Date(svc.service_date + 'T00:00:00').toLocaleDateString('fr-FR', {
+    weekday: 'long', day: 'numeric', month: 'long'
+  })
+  const timeFormatted = svc.service_time?.substring(0, 5)
+
+  const adminClient = createAdminClient()
+  const client = adminClient || supabase
+
+  const notifications = assignments.map(a => ({
+    recipient_member_id: a.member_id,
+    church_id: profile.church_id,
+    type: 'assignment',
+    title: `🔔 ALERTE : Culte dans 30 Minutes !`,
+    body: `C'est presque l'heure ! Préparez-vous pour votre service de ${a.role} pour le culte "${svc.name}".`,
+    related_service_id: serviceId,
+    related_assignment_id: a.id
+  }))
+
+  const { error } = await client.from('notifications').insert(notifications)
+
+  if (error) {
+    console.error("Bulk reminder error", error)
+    return { error: 'Erreur lors de l\'envoi des rappels' }
   }
 
   return { success: true }

@@ -5,6 +5,7 @@ import { SuperAdminOmnibox } from "@/components/SuperAdminOmnibox";
 import ToastProvider from "@/components/ToastProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { GodModeWrapper } from "@/components/GodModeWrapper";
+import { InstallPWA } from "@/components/InstallPWA";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -40,6 +41,7 @@ export default function RootLayout({
       <body className="antialiased dark:bg-background" suppressHydrationWarning={true}>
         <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange>
           {children}
+          <InstallPWA />
           <SuperAdminOmnibox />
           <ToastProvider />
           <GodModeWrapper />

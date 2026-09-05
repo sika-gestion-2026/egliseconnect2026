@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { CalendarDays, Megaphone, ShieldCheck, BellRing, HeartHandshake, Settings, LogOut, Palette } from 'lucide-react'
 
 type NavItem = {
   name: string
@@ -56,8 +57,8 @@ export default function Sidebar({
 
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-primary-900 text-white flex flex-col border-r-4 border-gold-500 transition-transform duration-300 ease-in-out
-        md:sticky md:top-0 md:h-screen md:translate-x-0
+        fixed top-0 bottom-0 left-0 z-50 w-64 h-full bg-primary-900 text-white flex flex-col border-r-4 border-gold-500 transition-transform duration-300 ease-in-out
+        md:relative md:translate-x-0
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div className="p-6 border-b border-primary-500 hidden md:block">
@@ -83,7 +84,7 @@ export default function Sidebar({
           </button>
         </div>
 
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto no-scrollbar">
           {navItems.map((item) => {
             const isActive = item.href === '/dashboard'
               ? pathname === '/dashboard'
@@ -101,14 +102,26 @@ export default function Sidebar({
             )
           })}
         </nav>
-        <div className="p-4 border-t border-primary-500 space-y-2">
-          <div className="flex justify-between items-center px-4 py-2">
-            <span className="text-sm font-medium">Thème visuel</span>
+        <div className="p-4 border-t border-primary-500/30 bg-primary-950/30 backdrop-blur-sm mt-auto flex flex-col gap-2">
+          {/* Paramètres */}
+          <Link href="/dashboard/settings" className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 text-gray-300 hover:text-white hover:bg-white/10 hover:shadow-lg hover:shadow-white/5">
+            <Settings size={18} />
+            <span className="font-medium text-sm">Paramètres</span>
+          </Link>
+
+          {/* Thème Visuel */}
+          <div className="flex justify-between items-center px-4 py-3 rounded-xl transition-all duration-300 text-gray-300 bg-black/20 border border-white/5 shadow-inner">
+            <div className="flex items-center gap-3">
+              <Palette size={18} className="text-gold-400" />
+              <span className="font-medium text-sm">Thème visuel</span>
+            </div>
             <ThemeToggle />
           </div>
+
+          {/* Déconnexion */}
           <form action="/auth/signout" method="post">
-            <button className="w-full text-left px-4 py-3 text-sm font-bold text-red-300 hover:text-red-100 hover:bg-primary-800 rounded-md transition-colors flex items-center gap-2">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            <button className="w-full text-left px-4 py-3 text-sm font-bold text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded-xl transition-all duration-300 flex items-center gap-3 border border-red-500/20 hover:border-red-500/40 shadow-lg shadow-red-500/5 hover:-translate-y-0.5">
+              <LogOut size={18} />
               Déconnexion
             </button>
           </form>

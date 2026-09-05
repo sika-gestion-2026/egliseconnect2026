@@ -12,21 +12,26 @@ export default async function EditMember(props: { params: Promise<{ id: string }
   const supabase = createClient(cookieStore)
   
   const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('user_profiles').select('church_id').eq('id', user?.id).single()
+  const { data: profile } = await supabase.from('user_profiles').select('church_id, role').eq('id', user?.id).single()
   
-  if (!profile?.church_id) {
+  if (!profile?.church_id && profile?.role !== 'super_admin') {
     redirect('/dashboard/members')
   }
 
   // Récupération du membre actuel
-  const { data: member } = await supabase
+  let memberQuery = supabase
     .from('members')
     .select('*')
     .eq('id', params.id)
-    .eq('church_id', profile.church_id)
-    .single()
+    
+  if (profile?.role !== 'super_admin' && profile?.church_id) {
+    memberQuery = memberQuery.eq('church_id', profile.church_id)
+  }
 
-  if (!member) {
+  const { data: member, error } = await memberQuery.single()
+
+  if (!member || error) {
+    console.error("Member not found error:", error);
     notFound()
   }
 
@@ -88,7 +93,7 @@ export default async function EditMember(props: { params: Promise<{ id: string }
       }
     }
     
-    const { error } = await sb.from('members').update({
+    let updateQuery = sb.from('members').update({
       first_name: firstName,
       last_name: lastName,
       gender,
@@ -108,7 +113,13 @@ export default async function EditMember(props: { params: Promise<{ id: string }
       pastoral_notes: pastoralNotes,
       needs_support: needsSupport,
       photo_url: finalPhotoUrl
-    }).eq('id', params.id).eq('church_id', profile?.church_id || '')
+    }).eq('id', params.id);
+    
+    if (profile?.role !== 'super_admin' && profile?.church_id) {
+      updateQuery = updateQuery.eq('church_id', profile.church_id);
+    }
+    
+    const { error } = await updateQuery;
     
     if (!error) {
       revalidatePath(`/dashboard/members/${params.id}`)

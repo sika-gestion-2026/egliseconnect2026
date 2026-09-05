@@ -123,8 +123,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   })
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-background text-foreground">
-      <div className="print:hidden h-full">
+    <div className="flex flex-col md:flex-row h-[100dvh] overflow-hidden bg-background text-foreground">
+      <div className="print:hidden flex-shrink-0">
         <Sidebar 
           churchName={church?.name || 'Mon Église'} 
           logoUrl={church?.logo_url} 
@@ -135,9 +135,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden print:overflow-visible">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden print:overflow-visible">
         {/* We can place a top header here if needed */}
-        <header className="bg-white/80 dark:bg-background/80 backdrop-blur-md border-b dark:border-white/10 shadow-sm p-4 flex justify-end items-center sticky top-0 z-10 print:hidden">
+        <header className="bg-white/80 dark:bg-background/80 backdrop-blur-md border-b dark:border-white/10 shadow-sm p-4 flex justify-end items-center z-10 print:hidden flex-shrink-0">
           <div className="text-sm text-gray-600 dark:text-gray-300">
             Connecté en tant que <span className="font-medium text-primary-900 dark:text-gold-400">
               {profile.role === 'super_admin' ? 'Super Admin (Mode Fantôme)' : user.email}

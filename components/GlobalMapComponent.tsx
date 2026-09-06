@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import L from 'leaflet';
 import 'leaflet.heat';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
@@ -135,6 +136,7 @@ export default function GlobalMapComponent({
 }: { 
   churches: any[]; userChurchId: string | null; userPhotoUrl?: string | null; userName?: string | null; userMemberId?: string | null; otherMembers?: any[];
 }) {
+  const router = useRouter();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [targetChurch, setTargetChurch] = useState<{ lat: number; lng: number } | null>(null);
   const [targetMember, setTargetMember] = useState<any | null>(null); // Pour la boussole membre
@@ -269,6 +271,14 @@ export default function GlobalMapComponent({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    // Auto-refresh the page data every 15 seconds so members see each other moving
+    const interval = setInterval(() => {
+      router.refresh();
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [router]);
 
   if (typeof window === 'undefined') return null;
 

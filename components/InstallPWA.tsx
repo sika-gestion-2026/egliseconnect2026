@@ -2,16 +2,29 @@
 
 import { useState, useEffect } from 'react'
 import { Download, X, Share, PlusSquare } from 'lucide-react'
+import { usePathname } from 'next/navigation'
 
 export function InstallPWA() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
   const [showPrompt, setShowPrompt] = useState(false)
   const [isIOS, setIsIOS] = useState(false)
   const [isStandalone, setIsStandalone] = useState(true) // default true to avoid hydration flicker
+  const pathname = usePathname()
 
   useEffect(() => {
     // Only run on client
     if (typeof window === 'undefined') return
+
+    // Check if user dismissed it previously
+    if (localStorage.getItem('pwaPromptDismissed') === 'true') {
+      return
+    }
+
+    // Only show on root or login page
+    if (pathname !== '/' && pathname !== '/login') {
+      setShowPrompt(false)
+      return
+    }
 
     // Check if app is already installed
     const isAppStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone
@@ -42,7 +55,12 @@ export function InstallPWA() {
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
     }
-  }, [])
+  }, [pathname])
+
+  const handleDismiss = () => {
+    setShowPrompt(false)
+    localStorage.setItem('pwaPromptDismissed', 'true')
+  }
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return
@@ -59,6 +77,7 @@ export function InstallPWA() {
     // Clear the deferredPrompt variable, since it can only be used once
     setDeferredPrompt(null)
     setShowPrompt(false)
+    localStorage.setItem('pwaPromptDismissed', 'true')
   }
 
   if (isStandalone || !showPrompt) {
@@ -70,7 +89,7 @@ export function InstallPWA() {
       <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl p-5 rounded-3xl shadow-2xl border border-gray-200 dark:border-white/10 relative overflow-hidden">
         <div className="absolute top-0 right-0 p-3">
           <button 
-            onClick={() => setShowPrompt(false)}
+            onClick={handleDismiss}
             className="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors bg-gray-100 dark:bg-slate-800 rounded-full p-1"
           >
             <X size={16} />

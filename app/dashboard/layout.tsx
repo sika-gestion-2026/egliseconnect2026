@@ -9,6 +9,7 @@ interface NavItem {
   name: string
   href: string
   icon: React.ReactNode
+  group?: string
 }
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies()
@@ -46,81 +47,60 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   if (profile.role === 'scanner') {
     navItems = [
-      { name: 'Scanner QR', href: '/dashboard/scanner', icon: scannerIcon }
+      { name: 'Scanner QR', href: '/dashboard/scanner', icon: scannerIcon, group: 'Vie de l\'Église' }
     ]
   } else if (profile.role === 'dept_leader') {
     navItems = [
-      { name: 'Tableau de bord', href: '/dashboard', icon: dashIcon },
-      { name: 'Mon Département', href: '/dashboard/members', icon: dirIcon },
-      { name: 'Planning & Ouvriers', href: '/dashboard/planning', icon: attIcon },
-      { name: 'Scanner QR', href: '/dashboard/scanner', icon: scannerIcon }
+      { name: 'Tableau de bord', href: '/dashboard', icon: dashIcon, group: 'Essentiel' },
+      { name: 'Mon Département', href: '/dashboard/members', icon: dirIcon, group: 'Essentiel' },
+      { name: 'Planning & Ouvriers', href: '/dashboard/planning', icon: attIcon, group: 'Vie de l\'Église' },
+      { name: 'Scanner QR', href: '/dashboard/scanner', icon: scannerIcon, group: 'Vie de l\'Église' }
     ]
   } else if (profile.role === 'moderator') {
     navItems = [
-      { name: 'Tableau de bord', href: '/dashboard', icon: dashIcon },
-      { name: 'Annuaire', href: '/dashboard/members', icon: dirIcon },
-      { name: 'Cultes & Pointages', href: '/dashboard/attendance', icon: attIcon },
-      { name: 'Planning & Ouvriers', href: '/dashboard/planning', icon: attIcon },
-      { name: 'Scanner QR', href: '/dashboard/scanner', icon: scannerIcon },
-      { name: 'Suivi Pastoral & Visites', href: '/dashboard/visits', icon: visitIcon },
-      { name: 'Localisation', href: '/localisation', icon: locIcon }
+      { name: 'Tableau de bord', href: '/dashboard', icon: dashIcon, group: 'Essentiel' },
+      { name: 'Annuaire', href: '/dashboard/members', icon: dirIcon, group: 'Essentiel' },
+      { name: 'Cultes & Pointages', href: '/dashboard/attendance', icon: attIcon, group: 'Vie de l\'Église' },
+      { name: 'Planning & Ouvriers', href: '/dashboard/planning', icon: attIcon, group: 'Vie de l\'Église' },
+      { name: 'Scanner QR', href: '/dashboard/scanner', icon: scannerIcon, group: 'Vie de l\'Église' },
+      { name: 'Suivi Pastoral', href: '/dashboard/visits', icon: visitIcon, group: 'Accompagnement' },
+      { name: 'Localisation', href: '/localisation', icon: locIcon, group: 'Accompagnement' }
     ]
   } else if (profile.role === 'mutual_manager') {
     navItems = [
-      { name: 'Tableau de bord', href: '/dashboard', icon: dashIcon },
-      { name: 'Annuaire', href: '/dashboard/members', icon: dirIcon },
-      { name: 'Mutuelle', href: '/dashboard/mutuelle', icon: dashIcon },
-      { name: 'Cultes & Pointages', href: '/dashboard/attendance', icon: attIcon },
-      { name: 'Planning & Ouvriers', href: '/dashboard/planning', icon: attIcon },
-      { name: 'Scanner QR', href: '/dashboard/scanner', icon: scannerIcon },
-      { name: 'Suivi Pastoral & Visites', href: '/dashboard/visits', icon: visitIcon },
-      { name: 'Localisation', href: '/localisation', icon: locIcon }
+      { name: 'Tableau de bord', href: '/dashboard', icon: dashIcon, group: 'Essentiel' },
+      { name: 'Annuaire', href: '/dashboard/members', icon: dirIcon, group: 'Essentiel' },
+      { name: 'Mutuelle', href: '/dashboard/mutuelle', icon: dashIcon, group: 'Accompagnement' },
+      { name: 'Cultes & Pointages', href: '/dashboard/attendance', icon: attIcon, group: 'Vie de l\'Église' },
+      { name: 'Planning & Ouvriers', href: '/dashboard/planning', icon: attIcon, group: 'Vie de l\'Église' },
+      { name: 'Scanner QR', href: '/dashboard/scanner', icon: scannerIcon, group: 'Vie de l\'Église' },
+      { name: 'Suivi Pastoral', href: '/dashboard/visits', icon: visitIcon, group: 'Accompagnement' },
+      { name: 'Localisation', href: '/localisation', icon: locIcon, group: 'Accompagnement' }
     ]
   } else {
     // Admin or Super Admin
     navItems = [
-      { name: 'Tableau de bord', href: '/dashboard', icon: dashIcon },
-      { name: 'Annuaire', href: '/dashboard/members', icon: dirIcon },
-      { name: 'Cultes & Pointages', href: '/dashboard/attendance', icon: attIcon },
-      { name: 'Planning & Ouvriers', href: '/dashboard/planning', icon: attIcon },
-      { name: 'Scanner QR', href: '/dashboard/scanner', icon: scannerIcon },
-      { name: 'Suivi Pastoral & Visites', href: '/dashboard/visits', icon: visitIcon },
-      { name: 'Localisation', href: '/localisation', icon: locIcon }
+      { name: 'Tableau de bord', href: '/dashboard', icon: dashIcon, group: 'Essentiel' },
+      { name: 'Annuaire', href: '/dashboard/members', icon: dirIcon, group: 'Essentiel' },
+      { name: 'Cultes & Pointages', href: '/dashboard/attendance', icon: attIcon, group: 'Vie de l\'Église' },
+      { name: 'Planning & Ouvriers', href: '/dashboard/planning', icon: attIcon, group: 'Vie de l\'Église' },
+      { name: 'Scanner QR', href: '/dashboard/scanner', icon: scannerIcon, group: 'Vie de l\'Église' },
+      { name: 'Suivi Pastoral', href: '/dashboard/visits', icon: visitIcon, group: 'Accompagnement' },
+      { name: 'Localisation', href: '/localisation', icon: locIcon, group: 'Accompagnement' }
     ]
 
     if (profile.role === 'church_admin' || profile.role === 'super_admin') {
-      navItems.push({ 
-        name: 'Flux d\'Édification', 
-        href: '/dashboard/edification', 
-        icon: <AttendanceIcon /> 
-      })
-
-
-
-      navItems.push({ 
-        name: 'Communications (SMS)', 
-        href: '/dashboard/communications/sms', 
-        icon: <PhoneIcon /> 
-      })
-
-      navItems.push({ 
-        name: 'Mutuelle', 
-        href: '/dashboard/mutuelle', 
-        icon: <DashboardIcon /> 
-      })
-      navItems.push({ 
-        name: 'Équipe & Modérateurs', 
-        href: '/dashboard/team', 
-        icon: dirIcon 
-      })
+      navItems.push(
+        { name: 'Flux d\'Édification', href: '/dashboard/edification', icon: <AttendanceIcon />, group: 'Administration' },
+        { name: 'Finances', href: '/dashboard/finances', icon: <DashboardIcon />, group: 'Administration' },
+        { name: 'Mutuelle', href: '/dashboard/mutuelle', icon: <DashboardIcon />, group: 'Administration' },
+        { name: 'Communications (SMS)', href: '/dashboard/communications/sms', icon: <PhoneIcon />, group: 'Administration' },
+        { name: 'Équipe & Modérateurs', href: '/dashboard/team', icon: dirIcon, group: 'Administration' }
+      )
     }
   }
 
-  navItems.push({ 
-    name: 'Paramètres', 
-    href: '/dashboard/settings', 
-    icon: <SettingsIcon /> 
-  })
+  
 
   return (
     <div className="flex flex-col md:flex-row h-[100dvh] overflow-hidden bg-background text-foreground">

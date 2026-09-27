@@ -86,6 +86,8 @@ export default async function NewChurch() {
     })
     
     if (!error) {
+      const { revalidatePath } = require('next/cache')
+      revalidatePath('/super-admin')
       redirect('/super-admin')
     } else {
       console.error("Erreur lors de la création de l'église:", error)

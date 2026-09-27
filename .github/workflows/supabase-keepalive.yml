@@ -1,0 +1,19 @@
+name: Supabase Keepalive
+
+on:
+  schedule:
+    # Runs at 10:00 AM UTC every day
+    - cron: '0 10 * * *'
+  workflow_dispatch: # Allows running manually from the Actions tab
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase to prevent pause
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" \
+            -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmdnlpaGN0d2l0aG52cmh4ZWVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczMjAwODcsImV4cCI6MjEwMjg5NjA4N30.n20zZbAyLizx0WwvyAm0BOWp3hjX0IIna-Vw7gK_biY" \
+            -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmdnlpaGN0d2l0aG52cmh4ZWVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczMjAwODcsImV4cCI6MjEwMjg5NjA4N30.n20zZbAyLizx0WwvyAm0BOWp3hjX0IIna-Vw7gK_biY" \
+            "https://ufvyihctwithnvrhxeec.supabase.co/rest/v1/churches?limit=1"
+          echo "Supabase a été pingé avec succès !"

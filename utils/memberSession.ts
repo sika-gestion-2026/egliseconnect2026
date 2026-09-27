@@ -56,7 +56,7 @@ export function verifyMemberSession(token: string): MemberSessionPayload | null 
     if (!payload.member_id || !payload.church_id) return null;
 
     return payload as MemberSessionPayload;
-  } catch (e) {
+  } catch {
     return null;
   }
 }

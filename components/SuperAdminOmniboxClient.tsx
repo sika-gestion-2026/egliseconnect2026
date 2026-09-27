@@ -42,7 +42,7 @@ export function SuperAdminOmniboxClient() {
           }
         }, 1500)
       }
-    } catch (err) {
+    } catch {
       setError('Erreur inattendue')
     } finally {
       setLoading(false)

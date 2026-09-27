@@ -4,12 +4,13 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ThemeToggle } from '@/components/ThemeToggle'
-import { CalendarDays, Megaphone, ShieldCheck, BellRing, HeartHandshake, Settings, LogOut, Palette } from 'lucide-react'
+import { Settings, LogOut, Palette } from 'lucide-react'
 
 type NavItem = {
   name: string
   href: string
   icon: React.ReactNode
+  group?: string
 }
 
 interface SidebarProps {
@@ -24,8 +25,7 @@ export default function Sidebar({
   churchName, 
   logoUrl, 
   navItems, 
-  userEmail,
-  isSuperAdmin
+  userEmail
 }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
@@ -84,23 +84,41 @@ export default function Sidebar({
           </button>
         </div>
 
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto no-scrollbar">
-          {navItems.map((item) => {
-            const isActive = item.href === '/dashboard'
-              ? pathname === '/dashboard'
-              : pathname === item.href || pathname?.startsWith(item.href + '/')
-            return (
-              <Link 
-                key={item.href} 
-                href={item.href} 
-                onClick={() => setIsOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-md transition-all duration-300 ${isActive ? 'bg-gradient-to-r from-primary-500 to-primary-700 text-gold-400 font-bold border-l-4 border-gold-400 shadow-md' : 'hover:bg-primary-800/50 hover:translate-x-1'}`}
-              >
-                {item.icon}
-                {item.name}
-              </Link>
-            )
-          })}
+        <nav className="flex-1 p-4 overflow-y-auto no-scrollbar">
+          {(() => {
+            const grouped = navItems.reduce((acc, item) => {
+              const group = item.group || 'Général'
+              if (!acc[group]) acc[group] = []
+              acc[group].push(item)
+              return acc
+            }, {} as Record<string, NavItem[]>)
+
+            return Object.entries(grouped).map(([group, items]) => (
+              <div key={group} className="mb-6 last:mb-0">
+                <h3 className="px-4 text-[10px] font-bold text-primary-400 uppercase tracking-widest mb-2 opacity-80">
+                  {group}
+                </h3>
+                <div className="space-y-1">
+                  {items.map((item) => {
+                    const isActive = item.href === '/dashboard'
+                      ? pathname === '/dashboard'
+                      : pathname === item.href || pathname?.startsWith(item.href + '/')
+                    return (
+                      <Link 
+                        key={item.href} 
+                        href={item.href} 
+                        onClick={() => setIsOpen(false)}
+                        className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-300 ${isActive ? 'bg-gradient-to-r from-primary-500 to-primary-700 text-gold-400 font-bold shadow-md shadow-primary-900/50' : 'text-gray-300 hover:text-white hover:bg-primary-800/50'}`}
+                      >
+                        <span className={`${isActive ? 'text-gold-400' : 'text-primary-300'}`}>{item.icon}</span>
+                        <span className="text-sm font-medium">{item.name}</span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+            ))
+          })()}
         </nav>
         <div className="p-4 border-t border-primary-500/30 bg-primary-950/30 backdrop-blur-sm mt-auto flex flex-col gap-2">
           {/* Paramètres */}

@@ -59,4 +59,8 @@ export async function deleteChurch(churchId: string) {
   if (error) {
     return { success: false, error: 'Erreur de suppression: ' + error.message }
   }
+
+  const { revalidatePath } = require('next/cache')
+  revalidatePath('/super-admin')
+  return { success: true }
 }

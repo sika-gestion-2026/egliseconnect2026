@@ -1,7 +1,8 @@
 import { createClient } from '@/utils/supabase/server'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import ScannerClient from './scanner-client';
+import dynamic from 'next/dynamic'
+const ScannerClient = dynamic(() => import('./scanner-client'), { ssr: false })
 import { getTodayLocalDateString } from '@/utils/date'
 
 export const metadata = {

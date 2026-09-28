@@ -86,7 +86,7 @@ export default async function NewChurch() {
     })
     
     if (!error) {
-      const { revalidatePath } = require('next/cache')
+      const { revalidatePath } = await import('next/cache')
       revalidatePath('/super-admin')
       redirect('/super-admin')
     } else {

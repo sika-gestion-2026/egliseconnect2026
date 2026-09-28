@@ -118,7 +118,7 @@ function HeatmapLayer({ points, show }: { points: [number, number, number][], sh
   useEffect(() => {
     if (!show || points.length === 0) return;
     try {
-      // @ts-ignore
+      
       const heat = L.heatLayer(points, {
         radius: 35,
         blur: 25,

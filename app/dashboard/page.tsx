@@ -5,7 +5,8 @@ import GrowthChart from '@/components/dashboard/GrowthChart'
 import QuartierChart from '@/components/dashboard/QuartierChart'
 import AnnouncementEditor from '@/components/dashboard/AnnouncementEditor'
 import RealTimeClock from '@/components/RealTimeClock'
-import BirthdayConfetti from '@/components/dashboard/BirthdayConfetti'
+import dynamic from 'next/dynamic'
+const BirthdayConfetti = dynamic(() => import('@/components/dashboard/BirthdayConfetti'), { ssr: false })
 import { calculateBirthdays, calculateAbsentees, Member } from '@/utils/dashboardMetrics'
 
 export default async function ChurchDashboard() {

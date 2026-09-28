@@ -8,7 +8,8 @@ import PrayerWall from './PrayerWall'
 import WorshipReminder from './WorshipReminder'
 import MutuelleWidget from './MutuelleWidget'
 import { QRCodeSVG } from 'qrcode.react'
-import ScannerModal from './ScannerModal'
+import dynamic from 'next/dynamic'
+const ScannerModal = dynamic(() => import('./ScannerModal'), { ssr: false })
 import OptimizedAvatar from '@/components/OptimizedAvatar'
 
 type MemberDashboardClientProps = {

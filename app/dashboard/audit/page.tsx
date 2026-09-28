@@ -34,7 +34,7 @@ export default async function AuditPage() {
     .limit(100)
 
   // On fetch aussi le nom du user_profile s'il existe
-  let userNames: Record<string, string> = {}
+  const userNames: Record<string, string> = {}
   if (logs && logs.length > 0) {
     const userIds = [...new Set(logs.map(l => l.user_id))]
     const { data: profilesData } = await supabase

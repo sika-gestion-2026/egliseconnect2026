@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { revalidatePath } from 'next/cache'
 import DeleteChurchButton from '@/components/DeleteChurchButton'
 import LocationPicker from '@/components/LocationPicker'
+import { createAdminClient } from '@/utils/supabase/admin'
 
 export default async function ManageChurchPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -29,8 +30,8 @@ export default async function ManageChurchPage(props: { params: Promise<{ id: st
   }
 
   // 2. Récupérer les détails de l'église
-  const { data: church } = await supabase
-    .from('churches')
+  const adminSbForSelect = createAdminClient();
+  const { data: church } = await adminSbForSelect.from('churches')
     .select('*')
     .eq('id', churchId)
     .single()
@@ -58,8 +59,7 @@ export default async function ManageChurchPage(props: { params: Promise<{ id: st
   // 4. Server Action pour mettre à jour l'église
   async function saveChurchDetails(formData: FormData) {
     'use server'
-    const cs = await cookies()
-    const sb = createClient(cs)
+    const adminSb = createAdminClient()
 
     const name = formData.get('name') as string
     const status = formData.get('status') as string
@@ -80,17 +80,17 @@ export default async function ManageChurchPage(props: { params: Promise<{ id: st
       // eslint-disable-next-line react-hooks/purity
       const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`
       
-      const { data: uploadData, error: uploadError } = await sb.storage
+      const { data: uploadData, error: uploadError } = await adminSb.storage
         .from('logos')
         .upload(fileName, logoFile)
         
       if (!uploadError && uploadData) {
-        const { data: publicUrlData } = sb.storage.from('logos').getPublicUrl(uploadData.path)
+        const { data: publicUrlData } = adminSb.storage.from('logos').getPublicUrl(uploadData.path)
         finalLogoUrl = publicUrlData.publicUrl
       }
     }
 
-    const { error } = await sb
+    const { error } = await adminSb
       .from('churches')
       .update({
         name,
@@ -131,7 +131,7 @@ export default async function ManageChurchPage(props: { params: Promise<{ id: st
       redirect('/dashboard')
     }
 
-    const { error } = await sb.from('churches').delete().eq('id', churchId)
+    const { error } = await createAdminClient().from('churches').delete().eq('id', churchId)
 
     if (!error) {
       revalidatePath('/super-admin')

@@ -99,7 +99,7 @@ export async function generateScheduleAction(months: number) {
     const dayNum = dayMap[def.day]
     if (dayNum === undefined) continue
 
-    let currentDate = getNextDayOfWeek(today, dayNum)
+    const currentDate = getNextDayOfWeek(today, dayNum)
     const rawTime = def.start_time || def.time || "09:00"
     const timeString = rawTime.length === 5 ? `${rawTime}:00` : rawTime
 

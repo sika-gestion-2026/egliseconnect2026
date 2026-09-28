@@ -20,7 +20,7 @@ export default async function SuperAdminDashboard() {
     redirect('/dashboard') // Or some unauthorized page
   }
 
-  const { data: churches } = await supabase.from('churches').select('*')
+  const { data: churches } = await supabase.from('churches').select('*').limit(10000).order('created_at', { ascending: false })
 
   return (
     <div className="min-h-screen bg-background text-foreground">

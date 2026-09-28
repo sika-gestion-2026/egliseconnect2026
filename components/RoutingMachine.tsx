@@ -17,7 +17,7 @@ export default function RoutingMachine({ userLocation, churchLocation, onRouteFo
 
     // Use OSRM (Open Source Routing Machine) which is the default for leaflet-routing-machine
     const routingControl = L.Routing.control({
-      // @ts-ignore - leaflet-routing-machine types can be tricky with plan
+      // leaflet-routing-machine types can be tricky with plan
       plan: L.Routing.plan(
         [
           L.latLng(userLocation.lat, userLocation.lng),

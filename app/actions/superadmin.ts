@@ -1,5 +1,7 @@
 'use server'
 
+import { createAdminClient } from '@/utils/supabase/admin'
+
 import { createClient } from '@/utils/supabase/server'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -26,16 +28,17 @@ export async function infiltrateChurch(churchId: string) {
   }
 
   // Mettre à jour le church_id du profil
-  const { error } = await supabase
-    .from('user_profiles')
-    .update({ church_id: churchId })
-    .eq('id', user.id)
+  
+  const { error } = await createAdminClient().from('user_profiles').update({ church_id: churchId }).eq('id', user.id)
 
   if (error) {
     console.error('Erreur infiltration:', error)
     return { success: false, error: 'Impossible d\'entrer dans cette église' }
   }
 
+  const { revalidatePath } = require('next/cache');
+  revalidatePath('/dashboard', 'layout');
+  revalidatePath('/super-admin', 'layout');
   redirect('/dashboard')
 }
 

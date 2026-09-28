@@ -337,7 +337,7 @@ export default function DirectoryClient({
                             title="WhatsApp"
                             onClick={(e) => {
                               e.preventDefault()
-                              let phone = member.phone?.replace(/[^0-9]/g, '') || ''
+                              const phone = member.phone?.replace(/[^0-9]/g, '') || ''
                               window.open(`https://wa.me/${phone}`, '_blank')
                             }} 
                             className="flex-1 flex items-center justify-center bg-green-50 hover:bg-green-100 text-green-600 dark:bg-green-900/30 dark:hover:bg-green-900/60 dark:text-green-400 rounded-xl transition-all shadow-sm hover:shadow-md hover:-translate-y-1 border border-green-200 dark:border-green-800/50"

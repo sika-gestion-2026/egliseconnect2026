@@ -6,6 +6,8 @@ import InfiltrateButton from '@/components/InfiltrateButton'
 
 export default function ChurchesTable({ churches }: { churches: any[] }) {
   const [searchTerm, setSearchTerm] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   const filteredChurches = churches?.filter(church => {
     const searchLower = searchTerm.toLowerCase()
@@ -17,6 +19,12 @@ export default function ChurchesTable({ churches }: { churches: any[] }) {
       church.quartier?.toLowerCase().includes(searchLower)
     )
   }) || []
+
+  const totalPages = Math.ceil(filteredChurches.length / itemsPerPage)
+  const paginatedChurches = filteredChurches.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
 
   return (
     <div className="mt-10">
@@ -59,8 +67,8 @@ export default function ChurchesTable({ churches }: { churches: any[] }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
-            {filteredChurches.length > 0 ? (
-              filteredChurches.map((church) => (
+            {paginatedChurches.length > 0 ? (
+              paginatedChurches.map((church) => (
                 <tr key={church.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-750/50 transition-colors">
                   <td className="px-6 py-4 font-mono text-xs font-bold text-gray-500 dark:text-gray-400">{church.code}</td>
                   <td className="px-6 py-4">
@@ -101,6 +109,33 @@ export default function ChurchesTable({ churches }: { churches: any[] }) {
           </tbody>
         </table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="mt-6 flex justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Affichage de {(currentPage - 1) * itemsPerPage + 1} Ã  {Math.min(currentPage * itemsPerPage, filteredChurches.length)} sur {filteredChurches.length} Ã©glises
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 border dark:border-slate-600 rounded-md disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+            >
+              PrÃ©cÃ©dent
+            </button>
+            <div className="flex items-center px-4 font-bold text-primary-900 dark:text-gold-400">
+              Page {currentPage} sur {totalPages}
+            </div>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 border dark:border-slate-600 rounded-md disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+            >
+              Suivant
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

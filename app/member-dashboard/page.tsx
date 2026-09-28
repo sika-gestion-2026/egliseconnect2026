@@ -276,9 +276,9 @@ export default async function MemberDashboard() {
   }
 
   // --- NOUVEAU: Réseau & Anniversaires ---
-  let birthdaysToday: any[] = [];
-  let locationMembers: any[] = [];
-  let departmentMembers: any[] = [];
+  const birthdaysToday: any[] = [];
+  const locationMembers: any[] = [];
+  const departmentMembers: any[] = [];
   let championOfMonth: any = null;
   let championOfYear: any = null;
 

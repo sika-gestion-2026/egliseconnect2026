@@ -10,6 +10,8 @@ import 'leaflet.heat';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import RoutingMachine from '@/components/RoutingMachine';
 import { updateMemberLocation } from '@/app/actions/localisationActions';
+import { createClient } from '@/utils/supabase/client';
+import MarkerClusterGroup from 'react-leaflet-cluster';
 
 // --- Utilitaires géographiques ---
 function getBearing(startLat: number, startLng: number, destLat: number, destLng: number) {
@@ -132,11 +134,12 @@ function HeatmapLayer({ points, show }: { points: [number, number, number][], sh
 }
 
 export default function GlobalMapComponent({ 
-  churches, userChurchId, userPhotoUrl, userName, userMemberId, otherMembers = []
+  churches, userChurchId, userPhotoUrl, userName, userMemberId, otherMembers: initialOtherMembers = []
 }: { 
   churches: any[]; userChurchId: string | null; userPhotoUrl?: string | null; userName?: string | null; userMemberId?: string | null; otherMembers?: any[];
 }) {
   const router = useRouter();
+  const [otherMembers, setOtherMembers] = useState<any[]>(initialOtherMembers);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [targetChurch, setTargetChurch] = useState<{ lat: number; lng: number } | null>(null);
   const [targetMember, setTargetMember] = useState<any | null>(null); // Pour la boussole membre
@@ -243,7 +246,13 @@ export default function GlobalMapComponent({
             setGpsError(null);
             const newLat = position.coords.latitude;
             const newLng = position.coords.longitude;
-            setUserLocation({ lat: newLat, lng: newLng });
+            setUserLocation((prev) => {
+              // Ignore small movements (< 10 meters) to prevent Leaflet Routing crashes on mobile
+              if (prev && getDistance(prev.lat, prev.lng, newLat, newLng) < 0.01) {
+                return prev;
+              }
+              return { lat: newLat, lng: newLng };
+            });
             
             const now = Date.now();
             if (userMemberId && now - lastLocationUpdate.current > 30000) {
@@ -273,12 +282,56 @@ export default function GlobalMapComponent({
   }, []);
 
   useEffect(() => {
-    // Auto-refresh the page data every 15 seconds so members see each other moving
-    const interval = setInterval(() => {
-      router.refresh();
-    }, 15000);
-    return () => clearInterval(interval);
-  }, [router]);
+    const supabase = createClient();
+    
+    // 1. Supabase Realtime pour des mises à jour GPS instantanées (0 latence)
+    const channel = supabase
+      .channel('realtime-members')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'members' },
+        (payload) => {
+          const updatedMember = payload.new;
+          if (updatedMember.id === userMemberId) return;
+          
+          setOtherMembers((prev) => {
+            const index = prev.findIndex((m) => m.id === updatedMember.id);
+            if (index !== -1) {
+              const newMembers = [...prev];
+              newMembers[index] = { ...newMembers[index], latitude: updatedMember.latitude, longitude: updatedMember.longitude };
+              return newMembers;
+            } else if (updatedMember.latitude && updatedMember.longitude) {
+              return [...prev, updatedMember];
+            }
+            return prev;
+          });
+        }
+      )
+      .subscribe();
+
+    // 2. Fallback de sécurité toutes les 30s (si le realtime lâche)
+    const interval = setInterval(async () => {
+      try {
+        const { data, error } = await supabase
+          .from('members')
+          .select('id, first_name, last_name, photo_url, role, latitude, longitude, church_id')
+          .not('latitude', 'is', null)
+          .not('longitude', 'is', null);
+
+        if (!error && data) {
+          const filtered = data.filter(m => m.id !== userMemberId);
+          setOtherMembers(filtered);
+        }
+      } catch (err) {
+        console.error("Erreur de rafraichissement GPS des membres:", err);
+      }
+    }, 30000);
+
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
+  }, [userMemberId]);
 
   if (typeof window === 'undefined') return null;
 
@@ -445,28 +498,40 @@ export default function GlobalMapComponent({
           <MapControls userLocation={userLocation} churchLocation={myChurch} />
           <HeatmapLayer points={heatmapPoints} show={showHeatmap} />
 
-          {/* Other Members Markers */}
-          {otherMembers.map((member) => (
-            <Marker key={member.id} position={[member.latitude, member.longitude]} icon={createOtherMemberIcon(member.photo_url)}>
-              <Popup>
-                <div className="flex flex-col gap-2 p-1 min-w-[180px] text-center">
-                  {member.photo_url ? (
-                    <img src={member.photo_url} className="w-12 h-12 rounded-full border-2 border-blue-500 object-cover mx-auto shadow-md" />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full border-2 border-blue-500 bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-xl mx-auto shadow-md">👤</div>
-                  )}
-                  <div>
-                    <h3 className="font-bold text-gray-900 m-0 leading-tight">{member.first_name} {member.last_name}</h3>
-                    <p className="text-[10px] uppercase tracking-wider text-blue-600 font-bold m-0">{member.role || 'Membre'}</p>
+          {/* Other Members Markers with Clustering */}
+          <MarkerClusterGroup 
+            chunkedLoading
+            maxClusterRadius={50}
+            iconCreateFunction={(cluster: any) => {
+              return L.divIcon({
+                html: `<div class="bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold border-2 border-white shadow-lg shadow-blue-500/50 relative z-[1000] animate-in zoom-in-50"><span class="absolute inset-0 rounded-full bg-blue-500 animate-ping opacity-25"></span><span class="relative z-10">${cluster.getChildCount()}</span></div>`,
+                className: 'custom-cluster-icon',
+                iconSize: [40, 40]
+              });
+            }}
+          >
+            {otherMembers.map((member) => (
+              <Marker key={member.id} position={[member.latitude, member.longitude]} icon={createOtherMemberIcon(member.photo_url)}>
+                <Popup>
+                  <div className="flex flex-col gap-2 p-1 min-w-[180px] text-center">
+                    {member.photo_url ? (
+                      <img src={member.photo_url} className="w-12 h-12 rounded-full border-2 border-blue-500 object-cover mx-auto shadow-md" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full border-2 border-blue-500 bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-xl mx-auto shadow-md">👤</div>
+                    )}
+                    <div>
+                      <h3 className="font-bold text-gray-900 m-0 leading-tight">{member.first_name} {member.last_name}</h3>
+                      <p className="text-[10px] uppercase tracking-wider text-blue-600 font-bold m-0">{member.role || 'Membre'}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mt-2 border-t pt-2 border-gray-100">
+                      <button onClick={() => handleTrackMember(member)} className="text-[10px] font-bold bg-blue-50 text-blue-600 py-1.5 rounded hover:bg-blue-100">🎯 CIBLER</button>
+                      <button onClick={() => handlePingMember(member)} className="text-[10px] font-bold bg-orange-50 text-orange-600 py-1.5 rounded hover:bg-orange-100">👋 PING</button>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 mt-2 border-t pt-2 border-gray-100">
-                    <button onClick={() => handleTrackMember(member)} className="text-[10px] font-bold bg-blue-50 text-blue-600 py-1.5 rounded hover:bg-blue-100">🎯 CIBLER</button>
-                    <button onClick={() => handlePingMember(member)} className="text-[10px] font-bold bg-orange-50 text-orange-600 py-1.5 rounded hover:bg-orange-100">👋 PING</button>
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
+                </Popup>
+              </Marker>
+            ))}
+          </MarkerClusterGroup>
 
           {/* Always show church markers */}
           {churches.map((church) => (

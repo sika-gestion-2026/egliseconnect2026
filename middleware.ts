@@ -26,7 +26,19 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  let user = null
+  try {
+    const userRes = await supabase.auth.getUser()
+    user = userRes.data?.user ?? null
+  } catch (err: any) {
+    // If refresh token is expired/missing or invalid, clear Supabase auth cookies gracefully
+    const allCookies = request.cookies.getAll()
+    allCookies.forEach(c => {
+      if (c.name.startsWith('sb-') || c.name.includes('auth-token')) {
+        response.cookies.delete(c.name)
+      }
+    })
+  }
 
   const { pathname } = request.nextUrl
 

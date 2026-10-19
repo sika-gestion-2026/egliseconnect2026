@@ -33,10 +33,7 @@ export async function login(formData: FormData) {
     let churchLogo = ''
 
     if (isSuperAdminEmail) {
-      const adminSb = createAdminClient()
-      if (!adminSb) {
-        return { error: 'Configuration serveur manquante' }
-      }
+      const adminSb = createAdminClient() || supabase
       const { data: existing } = await adminSb
         .from('user_profiles')
         .select('*')

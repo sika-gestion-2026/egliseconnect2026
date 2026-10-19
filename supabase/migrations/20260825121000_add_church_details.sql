@@ -1,0 +1,9 @@
+ALTER TABLE public.churches
+ADD COLUMN commune TEXT,
+ADD COLUMN quartier TEXT,
+ADD COLUMN vision TEXT,
+ADD COLUMN logo_url TEXT,
+ADD COLUMN leader_name TEXT,
+ADD COLUMN leader_contact TEXT,
+ADD COLUMN latitude DOUBLE PRECISION,
+ADD COLUMN longitude DOUBLE PRECISION;

@@ -1,0 +1,236 @@
+{
+  "url": "https://ufvyihctwithnvrhxeec.supabase.co",
+  "tables": [
+    {
+      "table": "attendance_members",
+      "columns": [
+        "attendance_id",
+        "member_id"
+      ]
+    },
+    {
+      "table": "attendances",
+      "columns": [
+        "church_id",
+        "created_at",
+        "date",
+        "id"
+      ]
+    },
+    {
+      "table": "audit_logs",
+      "columns": [
+        "action_type",
+        "church_id",
+        "created_at",
+        "details",
+        "id",
+        "user_id"
+      ]
+    },
+    {
+      "table": "church_departments",
+      "columns": [
+        "church_id",
+        "created_at",
+        "description",
+        "id",
+        "name"
+      ]
+    },
+    {
+      "table": "church_finances",
+      "columns": [
+        "amount",
+        "category",
+        "church_id",
+        "created_at",
+        "created_by",
+        "date",
+        "id",
+        "motif",
+        "type"
+      ]
+    },
+    {
+      "table": "church_services",
+      "columns": [
+        "church_id",
+        "created_at",
+        "created_by",
+        "id",
+        "name",
+        "service_date",
+        "service_time",
+        "type"
+      ]
+    },
+    {
+      "table": "churches",
+      "columns": [
+        "city",
+        "code",
+        "commune",
+        "created_at",
+        "id",
+        "latitude",
+        "leader_contact",
+        "leader_name",
+        "leader_title",
+        "logo_url",
+        "longitude",
+        "name",
+        "quartier",
+        "status",
+        "vision",
+        "worship_days"
+      ]
+    },
+    {
+      "table": "contents",
+      "columns": [
+        "body",
+        "church_id",
+        "created_at",
+        "id",
+        "is_pinned",
+        "title",
+        "type",
+        "url"
+      ]
+    },
+    {
+      "table": "department_leaders",
+      "columns": [
+        "assigned_at",
+        "department_id",
+        "id",
+        "member_id"
+      ]
+    },
+    {
+      "table": "member_notes",
+      "columns": [
+        "author_id",
+        "content",
+        "created_at",
+        "id",
+        "is_private",
+        "member_id",
+        "service_id",
+        "type",
+        "updated_at"
+      ]
+    },
+    {
+      "table": "members",
+      "columns": [
+        "address",
+        "arrival_date",
+        "baptism_church",
+        "baptized",
+        "birth_date",
+        "children_count",
+        "church_id",
+        "commune",
+        "created_at",
+        "email",
+        "emergency_contact",
+        "first_name",
+        "functions",
+        "gender",
+        "id",
+        "invited_by",
+        "last_name",
+        "latitude",
+        "longitude",
+        "marital_status",
+        "needs_support",
+        "pastoral_notes",
+        "phone",
+        "photo_url",
+        "profession",
+        "quartier",
+        "status",
+        "visit_planned"
+      ]
+    },
+    {
+      "table": "mutual_members",
+      "columns": [
+        "church_id",
+        "id",
+        "joined_at",
+        "member_id"
+      ]
+    },
+    {
+      "table": "mutual_transactions",
+      "columns": [
+        "amount",
+        "church_id",
+        "created_at",
+        "id",
+        "member_id",
+        "motive",
+        "recorded_by",
+        "type"
+      ]
+    },
+    {
+      "table": "notifications",
+      "columns": [
+        "body",
+        "church_id",
+        "created_at",
+        "id",
+        "is_read",
+        "recipient_member_id",
+        "related_assignment_id",
+        "related_service_id",
+        "title",
+        "type"
+      ]
+    },
+    {
+      "table": "service_assignments",
+      "columns": [
+        "created_at",
+        "created_by",
+        "id",
+        "member_id",
+        "refusal_reason",
+        "replacement_member_id",
+        "role",
+        "service_id",
+        "status",
+        "updated_at"
+      ]
+    },
+    {
+      "table": "service_declarations",
+      "columns": [
+        "created_at",
+        "id",
+        "member_id",
+        "notes",
+        "reason",
+        "service_id",
+        "status",
+        "updated_at"
+      ]
+    },
+    {
+      "table": "user_profiles",
+      "columns": [
+        "church_id",
+        "created_at",
+        "email",
+        "id",
+        "member_id",
+        "role"
+      ]
+    }
+  ],
+  "generatedAt": "2026-10-05T12:24:30.175Z"
+}

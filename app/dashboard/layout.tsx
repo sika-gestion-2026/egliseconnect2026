@@ -1,0 +1,160 @@
+import { redirect } from 'next/navigation'
+import { createClient } from '@/utils/supabase/server'
+import { cookies } from 'next/headers'
+import Sidebar from '@/components/Sidebar'
+import SuperAdminChurchSwitcher from '@/components/SuperAdminChurchSwitcher'
+import { ScannerIcon, DashboardIcon, DirectoryIcon, AttendanceIcon, VisitIcon, LocationIcon, PhoneIcon, SettingsIcon } from '@/components/Icons'
+import { purgeOldServices } from '@/app/actions/maintenance'
+
+let lastPurgeTime = 0
+const PURGE_COOLDOWN_MS = 6 * 60 * 60 * 1000
+
+interface NavItem {
+  name: string
+  href: string
+  icon: React.ReactNode
+  group?: string
+}
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const cookieStore = await cookies()
+  const supabase = createClient(cookieStore)
+
+  // Trigger silent purge (throttled to once every 6 hours per server instance)
+  const now = Date.now()
+  if (now - lastPurgeTime > PURGE_COOLDOWN_MS) {
+    lastPurgeTime = now
+    purgeOldServices().catch(console.error)
+  }
+
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect('/login')
+  }
+
+  const { data: profile } = await supabase.from('user_profiles').select('*, churches(*)').eq('id', user.id).single()
+
+  if (!profile) {
+    redirect('/join-church')
+  }
+
+  if (profile.role === 'super_admin' && !profile.church_id) {
+    redirect('/super-admin')
+  }
+
+  const church = profile.churches
+
+  // Pour le Super Admin : récupérer la liste de toutes les églises pour le sélecteur rapide
+  let allChurches: { id: string; name: string; code: string; logo_url: string | null; status: string }[] = []
+  if (profile.role === 'super_admin') {
+    const { data: churches } = await supabase
+      .from('churches')
+      .select('id, name, code, logo_url, status')
+      .order('name')
+    allChurches = churches || []
+  }
+  
+  let navItems: NavItem[] = []
+
+  const scannerIcon = <ScannerIcon />
+  const dashIcon = <DashboardIcon />
+  const dirIcon = <DirectoryIcon />
+  const attIcon = <AttendanceIcon />
+  const visitIcon = <VisitIcon />
+  const locIcon = <LocationIcon />
+
+  if (profile.role === 'scanner') {
+    navItems = [
+      { name: 'Scanner QR', href: '/dashboard/scanner', icon: scannerIcon, group: 'Vie de l\'Église' }
+    ]
+  } else if (profile.role === 'dept_leader') {
+    navItems = [
+      { name: 'Tableau de bord', href: '/dashboard', icon: dashIcon, group: 'Essentiel' },
+      { name: 'Mon Département', href: '/dashboard/members', icon: dirIcon, group: 'Essentiel' },
+      { name: 'Planning & Ouvriers', href: '/dashboard/planning', icon: attIcon, group: 'Vie de l\'Église' },
+      { name: 'Scanner QR', href: '/dashboard/scanner', icon: scannerIcon, group: 'Vie de l\'Église' }
+    ]
+  } else if (profile.role === 'moderator') {
+    navItems = [
+      { name: 'Tableau de bord', href: '/dashboard', icon: dashIcon, group: 'Essentiel' },
+      { name: 'Annuaire', href: '/dashboard/members', icon: dirIcon, group: 'Essentiel' },
+      { name: 'Cultes & Pointages', href: '/dashboard/attendance', icon: attIcon, group: 'Vie de l\'Église' },
+      { name: 'Planning & Ouvriers', href: '/dashboard/planning', icon: attIcon, group: 'Vie de l\'Église' },
+      { name: 'Scanner QR', href: '/dashboard/scanner', icon: scannerIcon, group: 'Vie de l\'Église' },
+      { name: 'Suivi Pastoral', href: '/dashboard/visits', icon: visitIcon, group: 'Accompagnement' },
+      { name: 'Localisation', href: '/localisation', icon: locIcon, group: 'Accompagnement' }
+    ]
+  } else if (profile.role === 'mutual_manager') {
+    navItems = [
+      { name: 'Tableau de bord', href: '/dashboard', icon: dashIcon, group: 'Essentiel' },
+      { name: 'Annuaire', href: '/dashboard/members', icon: dirIcon, group: 'Essentiel' },
+      { name: 'Mutuelle', href: '/dashboard/mutuelle', icon: dashIcon, group: 'Accompagnement' },
+      { name: 'Cultes & Pointages', href: '/dashboard/attendance', icon: attIcon, group: 'Vie de l\'Église' },
+      { name: 'Planning & Ouvriers', href: '/dashboard/planning', icon: attIcon, group: 'Vie de l\'Église' },
+      { name: 'Scanner QR', href: '/dashboard/scanner', icon: scannerIcon, group: 'Vie de l\'Église' },
+      { name: 'Suivi Pastoral', href: '/dashboard/visits', icon: visitIcon, group: 'Accompagnement' },
+      { name: 'Localisation', href: '/localisation', icon: locIcon, group: 'Accompagnement' }
+    ]
+  } else {
+    // Admin or Super Admin
+    navItems = [
+      { name: 'Tableau de bord', href: '/dashboard', icon: dashIcon, group: 'Essentiel' },
+      { name: 'Annuaire', href: '/dashboard/members', icon: dirIcon, group: 'Essentiel' },
+      { name: 'Cultes & Pointages', href: '/dashboard/attendance', icon: attIcon, group: 'Vie de l\'Église' },
+      { name: 'Planning & Ouvriers', href: '/dashboard/planning', icon: attIcon, group: 'Vie de l\'Église' },
+      { name: 'Scanner QR', href: '/dashboard/scanner', icon: scannerIcon, group: 'Vie de l\'Église' },
+      { name: 'Suivi Pastoral', href: '/dashboard/visits', icon: visitIcon, group: 'Accompagnement' },
+      { name: 'Localisation', href: '/localisation', icon: locIcon, group: 'Accompagnement' }
+    ]
+
+    if (profile.role === 'church_admin' || profile.role === 'super_admin') {
+      navItems.push(
+        { name: 'Flux d\'Édification', href: '/dashboard/edification', icon: <AttendanceIcon />, group: 'Administration' },
+        { name: 'Finances', href: '/dashboard/finances', icon: <DashboardIcon />, group: 'Administration' },
+        { name: 'Mutuelle', href: '/dashboard/mutuelle', icon: <DashboardIcon />, group: 'Administration' },
+        { name: 'Communications (SMS)', href: '/dashboard/communications/sms', icon: <PhoneIcon />, group: 'Administration' },
+        { name: 'Équipe & Modérateurs', href: '/dashboard/team', icon: dirIcon, group: 'Administration' }
+      )
+    }
+  }
+
+  
+
+  return (
+    <div className="flex flex-col md:flex-row h-[100dvh] overflow-hidden bg-background text-foreground">
+      <div className="print:hidden flex-shrink-0">
+        <Sidebar 
+          churchName={church?.name || 'Mon Église'} 
+          logoUrl={church?.logo_url} 
+          navItems={navItems} 
+          userEmail={user.email || ''} 
+          isSuperAdmin={profile.role === 'super_admin'}
+        />
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden print:overflow-visible">
+        {/* We can place a top header here if needed */}
+        <header className="bg-white/80 dark:bg-background/80 backdrop-blur-md border-b dark:border-white/10 shadow-sm p-4 flex justify-between items-center z-10 print:hidden flex-shrink-0 gap-4">
+          {profile.role === 'super_admin' && (
+            <SuperAdminChurchSwitcher
+              churches={allChurches}
+              currentChurchId={profile.church_id}
+              currentChurchName={church?.name || 'Aucune église'}
+            />
+          )}
+          <div className="text-sm text-gray-600 dark:text-gray-300 ml-auto">
+            Connecté en tant que <span className="font-medium text-primary-900 dark:text-gold-400">
+              {profile.role === 'super_admin' ? 'Super Admin (Mode Fantôme)' : user.email}
+            </span>
+          </div>
+        </header>
+        
+        {/* Page Content */}
+        <main className="flex-1 overflow-y-auto p-8 print:p-0 print:overflow-visible">
+          {children}
+        </main>
+      </div>
+    </div>
+  )
+}

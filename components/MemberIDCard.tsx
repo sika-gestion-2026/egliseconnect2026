@@ -518,9 +518,9 @@ export default function MemberIDCard({
           <div className="relative z-10 w-full h-full p-4 flex flex-col justify-between text-white">
             
             {/* 1. HEADER DU RECTO : Logo église + Nom de l'église + Badge Département */}
-            <div className="flex items-center justify-between gap-3 border-b border-white/20 pb-2">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-10 h-10 rounded-full bg-white shadow-md overflow-hidden ring-2 ring-white/90 flex items-center justify-center p-0.5 shrink-0">
+            <div className="flex items-center justify-between gap-2.5 border-b border-white/20 pb-1.5">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <div className="w-9 h-9 rounded-full bg-white shadow-md overflow-hidden ring-2 ring-white/90 flex items-center justify-center p-0.5 shrink-0">
                   {member.church.logo_url ? (
                     <img
                       src={member.church.logo_url}
@@ -529,16 +529,16 @@ export default function MemberIDCard({
                       crossOrigin="anonymous"
                     />
                   ) : (
-                    <span className="font-serif font-black text-slate-800 text-sm">
+                    <span className="font-serif font-black text-slate-800 text-xs">
                       {member.church.name.slice(0, 2).toUpperCase()}
                     </span>
                   )}
                 </div>
-                <div className="min-w-0">
-                  <h3 className="font-black font-serif text-white tracking-wide text-[13px] leading-tight uppercase drop-shadow-md truncate">
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-black font-serif text-white tracking-wide text-[11.5px] leading-tight uppercase drop-shadow-md break-words line-clamp-2">
                     {member.church.name}
                   </h3>
-                  <span className="text-[9.5px] font-mono tracking-wider text-white/80 uppercase">
+                  <span className="text-[8.5px] font-mono tracking-wider text-white/80 uppercase block">
                     CARTE OFFICIELLE DE MEMBRE
                   </span>
                 </div>
@@ -546,7 +546,7 @@ export default function MemberIDCard({
 
               {/* Département d'affectation principal */}
               <div 
-                className="px-2.5 py-1 rounded-full border shadow-sm backdrop-blur-md shrink-0 max-w-[150px]"
+                className="px-2 py-0.5 rounded-full border shadow-sm backdrop-blur-md shrink-0 max-w-[160px]"
                 style={{ 
                   backgroundColor: theme.chipBg, 
                   borderColor: `${theme.accentColor}55` 
@@ -554,7 +554,7 @@ export default function MemberIDCard({
               >
                 <p 
                   title={displayRole}
-                  className="font-black uppercase tracking-wider text-[9.5px] leading-tight drop-shadow-sm truncate"
+                  className="font-black uppercase tracking-wider text-[8.5px] leading-tight drop-shadow-sm break-words line-clamp-2 text-center"
                   style={{ color: theme.chipText }}
                 >
                   {displayRole}
@@ -563,12 +563,12 @@ export default function MemberIDCard({
             </div>
 
             {/* 2. CORPS : Photo Membre (gauche) + Nom/Prénom/Contact (centre) + QR Code (droite) */}
-            <div className="flex items-center justify-between gap-3 my-auto py-1">
+            <div className="flex items-center justify-between gap-2.5 my-auto py-1">
               
               {/* Photo Membre */}
               <div className="relative shrink-0">
                 <div
-                  className="w-20 h-24 rounded-xl p-0.5 shadow-xl relative overflow-hidden"
+                  className="w-19 h-23 rounded-xl p-0.5 shadow-xl relative overflow-hidden"
                   style={{ background: theme.accentGradient }}
                 >
                   {member.photo_url ? (
@@ -579,7 +579,7 @@ export default function MemberIDCard({
                       crossOrigin="anonymous"
                     />
                   ) : (
-                    <div className="w-full h-full rounded-[10px] bg-slate-900 flex items-center justify-center text-white font-bold text-xl font-serif">
+                    <div className="w-full h-full rounded-[10px] bg-slate-900 flex items-center justify-center text-white font-bold text-lg font-serif">
                       {firstName[0]}
                       {lastName[0]}
                     </div>
@@ -587,39 +587,39 @@ export default function MemberIDCard({
                 </div>
                 {/* Badge Certifié */}
                 <div
-                  className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-black shadow-md border-2 border-white"
+                  className="absolute -bottom-1 -right-1 w-4.5 h-4.5 rounded-full flex items-center justify-center text-white text-[9px] font-black shadow-md border-2 border-white"
                   style={{ backgroundColor: theme.accentColor }}
                 >
                   ✓
                 </div>
               </div>
 
-              {/* Informations Membre au Centre */}
-              <div className="flex-1 min-w-0 pr-1">
+              {/* Informations Membre au Centre : Aéré et sans coupure */}
+              <div className="flex-1 min-w-0 pr-1 space-y-0.5">
                 <div className="flex flex-col">
                   <span 
-                    className="text-[12px] font-extrabold uppercase tracking-wide drop-shadow-sm truncate"
+                    className="text-[11px] font-extrabold uppercase tracking-wide drop-shadow-sm leading-tight break-words"
                     style={{ color: theme.chipText }}
                   >
                     {firstName}
                   </span>
-                  <span className="text-[16px] font-black text-white uppercase tracking-tight drop-shadow-md truncate">
+                  <span className="text-[14px] font-black text-white uppercase tracking-tight drop-shadow-md leading-tight break-words">
                     {lastName}
                   </span>
                 </div>
 
-                <div className="mt-2 space-y-1">
+                <div className="pt-1 space-y-0.5">
                   {member.phone && (
-                    <p className="text-[11px] font-bold text-white/95 flex items-center gap-1.5 truncate">
-                      <span className="text-[10px] shrink-0">📞</span>
+                    <p className="text-[9.5px] font-bold text-white/95 flex items-center gap-1.5 leading-snug">
+                      <span className="text-[9px] shrink-0">📞</span>
                       <span className="font-mono">{member.phone}</span>
                     </p>
                   )}
 
                   {(member.quartier || member.commune) && (
-                    <p className="text-[10px] font-medium text-white/85 flex items-center gap-1.5 truncate">
-                      <span className="text-[9.5px] shrink-0">📍</span>
-                      <span className="truncate">{[member.quartier, member.commune].filter(Boolean).join(', ')}</span>
+                    <p className="text-[9px] font-medium text-white/85 flex items-start gap-1 leading-snug">
+                      <span className="text-[8.5px] shrink-0 mt-0.5">📍</span>
+                      <span className="break-words line-clamp-2">{[member.quartier, member.commune].filter(Boolean).join(', ')}</span>
                     </p>
                   )}
                 </div>
@@ -630,26 +630,23 @@ export default function MemberIDCard({
                 <div className="p-1 bg-white rounded-lg shadow-md border border-white/90">
                   <QRCodeSVG
                     value={member.id}
-                    size={64}
+                    size={58}
                     level="M"
                     includeMargin={false}
                     fgColor="#07152b"
                     bgColor="#ffffff"
                   />
                 </div>
-                <span className="text-[7.5px] font-mono font-bold text-white/80 uppercase tracking-wider mt-1">
+                <span className="text-[7px] font-mono font-bold text-white/80 uppercase tracking-wider mt-1">
                   POINTAGE
                 </span>
               </div>
             </div>
 
-            {/* 3. FOOTER DU RECTO : Code Membre & Mention Système */}
-            <div className="flex items-center justify-between border-t border-white/20 pt-1.5 text-[9px] text-white/80">
-              <span className="font-mono font-bold tracking-wider">
-                ID : {memberCode}
-              </span>
-              <span className="font-mono font-bold uppercase tracking-widest text-[8px]" style={{ color: theme.chipText }}>
-                ÉGLISE CONNECT
+            {/* 3. FOOTER DU RECTO : Code Membre centré, pas de mention Eglise Connect */}
+            <div className="flex items-center justify-center border-t border-white/20 pt-1 text-[8.5px] text-white/90">
+              <span className="font-mono font-bold tracking-wider text-center">
+                ID MEMBRE : {memberCode}
               </span>
             </div>
 
@@ -712,15 +709,15 @@ export default function MemberIDCard({
           {/* CONTENU VERSO PAYSAGE AÉRÉ */}
           <div className="relative z-10 p-4 pt-2.5 h-[calc(100%-40px)] flex flex-col justify-between text-white">
             
-            {/* Grille 2 colonnes : Église (gauche) & Coordonnées (droite) */}
+            {/* Grille 2 colonnes : Église (gauche) & Coordonnées (droite) avec textes ajustés sans coupure */}
             <div className="grid grid-cols-2 gap-3 pt-1">
               {/* Colonne Gauche : Église & Code */}
-              <div className="border-r border-white/15 pr-2 space-y-1">
-                <p className="text-[8px] uppercase tracking-wider text-white/60 font-bold">Communauté Chrétienne</p>
-                <p className="text-xs font-black font-serif text-white leading-tight truncate">{member.church.name}</p>
+              <div className="border-r border-white/15 pr-2 space-y-1 min-w-0">
+                <p className="text-[7.5px] uppercase tracking-wider text-white/60 font-bold">Communauté Chrétienne</p>
+                <p className="text-[11px] font-black font-serif text-white leading-tight break-words line-clamp-2">{member.church.name}</p>
                 {member.church.code && (
                   <span 
-                    className="inline-block text-[8.5px] font-mono font-bold px-2 py-0.5 rounded border mt-1"
+                    className="inline-block text-[8px] font-mono font-bold px-2 py-0.5 rounded border mt-0.5"
                     style={{ 
                       backgroundColor: theme.chipBg, 
                       color: theme.chipText,
@@ -733,28 +730,28 @@ export default function MemberIDCard({
               </div>
 
               {/* Colonne Droite : Direction Pastorale & Contact */}
-              <div className="space-y-1">
+              <div className="space-y-1 min-w-0">
                 <div>
                   <p 
-                    className="text-[8px] font-black uppercase tracking-wider"
+                    className="text-[7.5px] font-black uppercase tracking-wider"
                     style={{ color: theme.chipText }}
                   >
                     {pastorTitle}
                   </p>
-                  <p className="text-[11px] font-black text-white leading-tight truncate">{pastorName}</p>
+                  <p className="text-[10px] font-black text-white leading-tight break-words line-clamp-1">{pastorName}</p>
                 </div>
 
-                <div className="pt-1 space-y-0.5">
+                <div className="pt-0.5 space-y-0.5">
                   {churchContact && (
-                    <p className="text-[9.5px] font-bold text-white/95 font-mono flex items-center gap-1 truncate">
+                    <p className="text-[9px] font-bold text-white/95 font-mono flex items-center gap-1 leading-snug">
                       <span>📞</span>
                       <span>{churchContact}</span>
                     </p>
                   )}
                   {churchLocation && (
-                    <p className="text-[9px] font-medium text-white/85 flex items-center gap-1 truncate">
-                      <span>📍</span>
-                      <span className="truncate">{churchLocation}</span>
+                    <p className="text-[8.5px] font-medium text-white/85 flex items-start gap-1 leading-snug">
+                      <span className="shrink-0 mt-0.5">📍</span>
+                      <span className="break-words line-clamp-2">{churchLocation}</span>
                     </p>
                   )}
                 </div>
@@ -774,29 +771,25 @@ export default function MemberIDCard({
               </p>
             </div>
 
-            {/* Code barre & Mentions */}
-            <div className="flex items-center justify-between border-t border-white/15 pt-1">
-              <div className="flex items-center gap-1 opacity-70">
-                <span className="w-1 h-3 bg-white"></span>
-                <span className="w-0.5 h-3 bg-white"></span>
-                <span className="w-1.5 h-3 bg-white"></span>
-                <span className="w-1 h-3 bg-white"></span>
-                <span className="w-0.5 h-3 bg-white"></span>
-                <span className="w-2 h-3 bg-white"></span>
-                <span className="w-1 h-3 bg-white"></span>
-                <span className="w-0.5 h-3 bg-white"></span>
+            {/* Code barre & Mentions bien centrées, sans Église Connect */}
+            <div className="flex flex-col items-center justify-center border-t border-white/15 pt-1 space-y-0.5 text-center">
+              <div className="flex items-center justify-center gap-1 opacity-70">
+                <span className="w-1 h-2.5 bg-white"></span>
+                <span className="w-0.5 h-2.5 bg-white"></span>
+                <span className="w-1.5 h-2.5 bg-white"></span>
+                <span className="w-1 h-2.5 bg-white"></span>
+                <span className="w-0.5 h-2.5 bg-white"></span>
+                <span className="w-2 h-2.5 bg-white"></span>
+                <span className="w-1 h-2.5 bg-white"></span>
+                <span className="w-0.5 h-2.5 bg-white"></span>
               </div>
 
-              <span className="text-[8px] text-white/70 font-mono tracking-wider">
-                ÉGLISE CONNECT • {memberCode}
-              </span>
-
-              <span 
-                className="text-[7.5px] font-mono tracking-widest uppercase font-bold"
+              <p 
+                className="text-[7.5px] font-mono tracking-wider uppercase font-semibold text-center"
                 style={{ color: theme.chipText }}
               >
-                PRODUIT MUNOKOLIVE
-              </span>
+                Projet Copyright Munokolive
+              </p>
             </div>
 
           </div>

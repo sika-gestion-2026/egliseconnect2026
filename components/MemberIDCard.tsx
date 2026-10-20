@@ -270,57 +270,40 @@ export default function MemberIDCard({
   const churchContact = member.church.leader_contact
 
   /**
-   * Capture haute fidélité pour impression Badge Tour de Cou PVC (Format Vertical 54 × 86 mm)
-   * Utilise html-to-image avec prise en compte propre des conteneurs cachés.
+   * Capture haute fidélité pour impression Carte de Membre (Format Paysage Universel 85.6 × 54 mm)
+   * Utilise html-to-image avec gestion sécurisée des images sans bloquer.
    */
   const captureSideDataUrl = async (sideToCapture: 'recto' | 'verso'): Promise<string> => {
     const originalSide = side
-    // On force l'affichage de la face dans le DOM actuel afin que toutes les dimensions et polices soient calculées
     setSide(sideToCapture)
-    // On attend un frame de rendu pour que le navigateur peigne la face
-    await new Promise((resolve) => setTimeout(resolve, 80))
+    await new Promise((resolve) => setTimeout(resolve, 150))
 
     const targetEl = sideToCapture === 'recto' ? rectoRef.current : versoRef.current
     if (!targetEl) throw new Error(`Face ${sideToCapture} introuvable`)
 
     try {
-      // Préchargement en Base64 de toutes les images pour éviter les erreurs CORS
-      const images = targetEl.querySelectorAll('img')
-      for (let i = 0; i < images.length; i++) {
-        const img = images[i]
-        const src = img.getAttribute('src')
-        if (src && !src.startsWith('data:')) {
-          const dataUrl = await toDataUrl(src)
-          if (dataUrl) img.src = dataUrl
-        }
-      }
-
-      // Rendu pixel-perfect haute résolution (pixelRatio: 3 = 300 DPI)
       const dataUrl = await toPng(targetEl, {
         quality: 0.98,
-        pixelRatio: 3,
+        pixelRatio: 2.5,
         backgroundColor: '#07152b',
         cacheBust: true,
       })
 
       return dataUrl
     } finally {
-      // On restaure l'affichage d'origine
       setSide(originalSide)
     }
   }
 
   /**
-   * Génération d'un document PDF professionnel Haute Définition
-   * Contient les deux faces (Recto et Verso) prêtes pour l'impression directe (Badges PVC 54 × 86 mm)
-   * Génère 2 pages de dimensions exactes ISO 7810 CR80 [54, 86] mm
+   * Génération du PDF d'impression Universel (Format Carte de Crédit / PVC ISO 7810 ID-1 : 85.6 × 54 mm Paysage)
    */
   const generateBadgePDF = async (): Promise<Blob> => {
     if (!rectoRef.current || !versoRef.current) {
       throw new Error('Éléments de carte introuvables')
     }
 
-    // Capture séquentielle propre des deux faces avec bascule DOM
+    // Capture séquentielle des deux faces
     const rectoDataUrl = await captureSideDataUrl('recto')
     const versoDataUrl = await captureSideDataUrl('verso')
 
@@ -328,43 +311,45 @@ export default function MemberIDCard({
       throw new Error('Échec de la capture des faces')
     }
 
-    // Format badge vertical standard ISO 7810 CR80 : 54 mm × 86 mm
+    // Format universel carte bancaire / PVC standard ID-1 : 85.6 mm × 53.98 mm Paysage
     const doc = new jsPDF({
-      orientation: 'portrait',
+      orientation: 'landscape',
       unit: 'mm',
-      format: [54, 86],
+      format: [85.6, 54],
     })
 
-    // Page 1 : RECTO (Face)
-    doc.addImage(rectoDataUrl, 'PNG', 0, 0, 54, 86, undefined, 'FAST')
+    // Page 1 : RECTO (Face Officielle)
+    doc.addImage(rectoDataUrl, 'PNG', 0, 0, 85.6, 54, undefined, 'FAST')
 
-    // Page 2 : VERSO (Infos & Contact)
-    doc.addPage([54, 86], 'portrait')
-    doc.addImage(versoDataUrl, 'PNG', 0, 0, 54, 86, undefined, 'FAST')
+    // Page 2 : VERSO (Coordonnées & Informations)
+    doc.addPage([85.6, 54], 'landscape')
+    doc.addImage(versoDataUrl, 'PNG', 0, 0, 85.6, 54, undefined, 'FAST')
 
     return doc.output('blob')
   }
 
-  // Téléchargement du Badge Officiel complet (PDF 2 pages Recto + Verso)
+  // Téléchargement sécurisé et direct du PDF
   const handleDownload = async () => {
     try {
       setIsExporting(true)
-      const toastId = toast.loading("Génération du PDF d'impression (Recto & Verso)...")
+      const toastId = toast.loading("Génération du PDF d'impression universel...")
 
       const pdfBlob = await generateBadgePDF()
       const url = URL.createObjectURL(pdfBlob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `Badge_Officiel_${firstName}_${lastName}.pdf`.replace(/\s+/g, '_')
+      a.download = `Carte_Membre_${firstName}_${lastName}.pdf`.replace(/\s+/g, '_')
       document.body.appendChild(a)
       a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
+      setTimeout(() => {
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+      }, 250)
 
-      toast.success('Badge PDF prêt pour impression (Recto + Verso 54 × 86 mm) !', { id: toastId })
-    } catch (err) {
-      console.error(err)
-      toast.error('Erreur lors de la création du PDF.')
+      toast.success('Carte PDF prête (Format Standard 85.6 × 54 mm) !', { id: toastId })
+    } catch (err: any) {
+      console.error('Erreur téléchargement PDF:', err)
+      toast.error('Erreur lors de la création du PDF : ' + (err?.message || 'Inconnue'))
     } finally {
       setIsExporting(false)
     }
@@ -417,17 +402,17 @@ export default function MemberIDCard({
   }
 
   return (
-    <div className="flex flex-col items-center w-full max-w-sm">
+    <div className="flex flex-col items-center w-full max-w-xl">
       {/* Contrôles supérieurs */}
       {showActions && (
         <div className="flex flex-col w-full gap-2.5 mb-3 px-1">
-          <div className="flex items-center justify-between w-full">
+          <div className="flex items-center justify-between w-full flex-wrap gap-2">
             {/* Bascule Recto / Verso */}
             <div className="inline-flex p-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-inner">
               <button
                 type="button"
                 onClick={() => setSide('recto')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all ${
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all ${
                   side === 'recto'
                     ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm'
                     : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
@@ -438,7 +423,7 @@ export default function MemberIDCard({
               <button
                 type="button"
                 onClick={() => setSide('verso')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all ${
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all ${
                   side === 'verso'
                     ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm'
                     : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
@@ -449,7 +434,7 @@ export default function MemberIDCard({
             </div>
 
             {/* Actions Télécharger / Partager */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <button
                 onClick={handleShare}
                 disabled={isExporting}
@@ -468,8 +453,8 @@ export default function MemberIDCard({
               <button
                 onClick={handleDownload}
                 disabled={isExporting}
-                title="Télécharger le badge en PDF prêt à imprimer"
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-lg bg-primary-900 hover:bg-primary-800 text-white shadow-sm transition-all active:scale-95 disabled:opacity-50"
+                title="Télécharger la carte de membre en PDF standard d'impression (85.6 × 54 mm)"
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-black rounded-lg bg-primary-900 hover:bg-primary-800 text-white shadow-md transition-all active:scale-95 disabled:opacity-50"
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -478,7 +463,7 @@ export default function MemberIDCard({
                   <line x1="9" y1="15" x2="12" y2="18"></line>
                   <line x1="15" y1="15" x2="12" y2="18"></line>
                 </svg>
-                Télécharger PDF
+                {isExporting ? 'Génération...' : 'Télécharger PDF (Impression)'}
               </button>
             </div>
           </div>
@@ -486,29 +471,29 @@ export default function MemberIDCard({
           <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 px-1">
             <span className="flex items-center gap-1.5 font-semibold">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              Format Badge Tour de Cou PVC (54 × 86 mm)
+              Format Standard Universel d&apos;Impression ISO CR80 (85.6 × 54 mm)
             </span>
             <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">
-              ✦ Vernis Brillant
+              ✦ Haute Définition
             </span>
           </div>
         </div>
       )}
 
       {/* ========================================================= */}
-      {/* CADRE BADGE PVC VERTICAL (CR80 Portrait : 54 x 86 mm)      */}
+      {/* CADRE CARTE DE MEMBRE STANDARD UNIVERSEL PAYSAGE (85.6 × 54 mm) */}
       {/* ========================================================= */}
-      <div className="w-full max-w-[310px] relative select-none">
+      <div className="w-full max-w-[500px] relative select-none">
         
         {/* --------------------------------------------------------- */}
-        {/* FACE RECTO VERTICALE                                      */}
+        {/* FACE RECTO PAYSAGE UNIVERSELLE                            */}
         {/* --------------------------------------------------------- */}
         <div
           ref={rectoRef}
           id={`member-pvc-recto-${member.id}`}
-          className="w-full rounded-[26px] overflow-hidden relative"
+          className="w-full rounded-[18px] overflow-hidden relative shadow-2xl"
           style={{
-            minHeight: '495px',
+            aspectRatio: '85.6 / 54',
             background: theme.primaryGradient,
             boxShadow: theme.borderGlow,
             display: side === 'recto' ? 'block' : 'none',
@@ -523,46 +508,45 @@ export default function MemberIDCard({
             }}
           />
 
-          {/* Fente stylisée pour cordon / Tour de cou en haut */}
-          <div className="w-full flex justify-center pt-2.5 relative z-20">
-            <div className="w-12 h-1.5 rounded-full bg-black/40 border border-white/20 shadow-inner"></div>
-          </div>
-
           {/* Halo d'ambiance premium */}
           <div
-            className="absolute -top-16 left-1/2 -translate-x-1/2 w-48 h-48 rounded-full blur-3xl pointer-events-none"
+            className="absolute -top-16 -right-16 w-56 h-56 rounded-full blur-3xl pointer-events-none"
             style={{ backgroundColor: theme.accentColor, opacity: 0.18 }}
           />
 
-          {/* CONTENU PRINCIPAL DU BADGE VERTICAL */}
-          <div className="relative z-10 w-full px-4 pt-1 pb-4 flex flex-col items-center text-center">
+          {/* CONTENU PRINCIPAL DU RECTO PAYSAGE */}
+          <div className="relative z-10 w-full h-full p-4 flex flex-col justify-between text-white">
             
-            {/* 1. EN-TÊTE : Logo Église + Nom Église + Département */}
-            <div className="w-full flex flex-col items-center">
-              {/* Logo église rond : REMPLIT PARFAITEMENT LE FOND BLANC */}
-              <div className="w-13 h-13 rounded-full bg-white shadow-lg overflow-hidden ring-2 ring-white/90 flex items-center justify-center p-0.5 shrink-0">
-                {member.church.logo_url ? (
-                  <img
-                    src={member.church.logo_url}
-                    alt="Logo"
-                    className="w-full h-full object-cover rounded-full"
-                    crossOrigin="anonymous"
-                  />
-                ) : (
-                  <span className="font-serif font-black text-slate-800 text-lg">
-                    {member.church.name.slice(0, 2).toUpperCase()}
+            {/* 1. HEADER DU RECTO : Logo église + Nom de l'église + Badge Département */}
+            <div className="flex items-center justify-between gap-3 border-b border-white/20 pb-2">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-10 h-10 rounded-full bg-white shadow-md overflow-hidden ring-2 ring-white/90 flex items-center justify-center p-0.5 shrink-0">
+                  {member.church.logo_url ? (
+                    <img
+                      src={member.church.logo_url}
+                      alt="Logo"
+                      className="w-full h-full object-cover rounded-full"
+                      crossOrigin="anonymous"
+                    />
+                  ) : (
+                    <span className="font-serif font-black text-slate-800 text-sm">
+                      {member.church.name.slice(0, 2).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-black font-serif text-white tracking-wide text-[13px] leading-tight uppercase drop-shadow-md truncate">
+                    {member.church.name}
+                  </h3>
+                  <span className="text-[9.5px] font-mono tracking-wider text-white/80 uppercase">
+                    CARTE OFFICIELLE DE MEMBRE
                   </span>
-                )}
+                </div>
               </div>
 
-              {/* Nom de l'église en BLANC pur bien visible */}
-              <h3 className="font-black font-serif text-white tracking-wide text-[12.5px] leading-tight uppercase drop-shadow-md mt-1.5 w-full text-center px-1">
-                {member.church.name}
-              </h3>
-
-              {/* Département d'affectation aux couleurs de l'église */}
+              {/* Département d'affectation principal */}
               <div 
-                className="mt-1 px-3 py-0.5 rounded-full border shadow-sm backdrop-blur-md max-w-full"
+                className="px-2.5 py-1 rounded-full border shadow-sm backdrop-blur-md shrink-0 max-w-[150px]"
                 style={{ 
                   backgroundColor: theme.chipBg, 
                   borderColor: `${theme.accentColor}55` 
@@ -570,7 +554,7 @@ export default function MemberIDCard({
               >
                 <p 
                   title={displayRole}
-                  className="font-extrabold uppercase tracking-wider text-[10.5px] leading-tight drop-shadow-sm truncate"
+                  className="font-black uppercase tracking-wider text-[9.5px] leading-tight drop-shadow-sm truncate"
                   style={{ color: theme.chipText }}
                 >
                   {displayRole}
@@ -578,81 +562,94 @@ export default function MemberIDCard({
               </div>
             </div>
 
-            {/* 2. PHOTO DU MEMBRE AVEC CADRE OR & COCHE */}
-            <div className="relative my-2 shrink-0">
-              <div
-                className="w-22 h-22 rounded-2xl p-0.5 shadow-2xl relative overflow-hidden"
-                style={{ background: theme.accentGradient }}
-              >
-                {member.photo_url ? (
-                  <img
-                    src={member.photo_url}
-                    alt={fullDisplayName}
-                    className="w-full h-full rounded-[14px] object-cover"
-                    crossOrigin="anonymous"
-                  />
-                ) : (
-                  <div className="w-full h-full rounded-[14px] bg-slate-900 flex items-center justify-center text-white font-bold text-2xl font-serif">
-                    {firstName[0]}
-                    {lastName[0]}
-                  </div>
-                )}
-              </div>
-              {/* Badge Certifié */}
-              <div
-                className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-black shadow-md border-2 border-white"
-                style={{ backgroundColor: theme.accentColor }}
-              >
-                ✓
-              </div>
-            </div>
-
-            {/* 3. NOM ET PRÉNOM : Prénom avec couleur accent de l'église, Nom en Blanc Majuscule */}
-            <div className="w-full px-1">
-              <div className="flex items-baseline justify-center gap-1.5 flex-wrap leading-tight">
-                <span 
-                  className="text-[13.5px] font-extrabold uppercase tracking-wide drop-shadow-sm"
-                  style={{ color: theme.chipText }}
+            {/* 2. CORPS : Photo Membre (gauche) + Nom/Prénom/Contact (centre) + QR Code (droite) */}
+            <div className="flex items-center justify-between gap-3 my-auto py-1">
+              
+              {/* Photo Membre */}
+              <div className="relative shrink-0">
+                <div
+                  className="w-20 h-24 rounded-xl p-0.5 shadow-xl relative overflow-hidden"
+                  style={{ background: theme.accentGradient }}
                 >
-                  {firstName}
-                </span>
-                <span className="text-[15.5px] font-black text-white uppercase tracking-tight drop-shadow-sm">
-                  {lastName}
-                </span>
+                  {member.photo_url ? (
+                    <img
+                      src={member.photo_url}
+                      alt={fullDisplayName}
+                      className="w-full h-full rounded-[10px] object-cover"
+                      crossOrigin="anonymous"
+                    />
+                  ) : (
+                    <div className="w-full h-full rounded-[10px] bg-slate-900 flex items-center justify-center text-white font-bold text-xl font-serif">
+                      {firstName[0]}
+                      {lastName[0]}
+                    </div>
+                  )}
+                </div>
+                {/* Badge Certifié */}
+                <div
+                  className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-black shadow-md border-2 border-white"
+                  style={{ backgroundColor: theme.accentColor }}
+                >
+                  ✓
+                </div>
               </div>
 
-              {/* Téléphone et Localisation avec tout l'espace requis */}
-              <div className="mt-1 space-y-0.5 text-center">
-                {member.phone && (
-                  <p className="text-[11px] font-bold text-white/95 flex items-center justify-center gap-1">
-                    <span className="text-[10px]">📞</span>
-                    <span>{member.phone}</span>
-                  </p>
-                )}
+              {/* Informations Membre au Centre */}
+              <div className="flex-1 min-w-0 pr-1">
+                <div className="flex flex-col">
+                  <span 
+                    className="text-[12px] font-extrabold uppercase tracking-wide drop-shadow-sm truncate"
+                    style={{ color: theme.chipText }}
+                  >
+                    {firstName}
+                  </span>
+                  <span className="text-[16px] font-black text-white uppercase tracking-tight drop-shadow-md truncate">
+                    {lastName}
+                  </span>
+                </div>
 
-                {(member.quartier || member.commune) && (
-                  <p className="text-[10.5px] font-medium text-white/80 flex items-center justify-center gap-1">
-                    <span className="text-[9.5px]">📍</span>
-                    <span>{[member.quartier, member.commune].filter(Boolean).join(' • ')}</span>
-                  </p>
-                )}
+                <div className="mt-2 space-y-1">
+                  {member.phone && (
+                    <p className="text-[11px] font-bold text-white/95 flex items-center gap-1.5 truncate">
+                      <span className="text-[10px] shrink-0">📞</span>
+                      <span className="font-mono">{member.phone}</span>
+                    </p>
+                  )}
+
+                  {(member.quartier || member.commune) && (
+                    <p className="text-[10px] font-medium text-white/85 flex items-center gap-1.5 truncate">
+                      <span className="text-[9.5px] shrink-0">📍</span>
+                      <span className="truncate">{[member.quartier, member.commune].filter(Boolean).join(', ')}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* QR Code à Droite */}
+              <div className="flex flex-col items-center shrink-0 pl-1">
+                <div className="p-1 bg-white rounded-lg shadow-md border border-white/90">
+                  <QRCodeSVG
+                    value={member.id}
+                    size={64}
+                    level="M"
+                    includeMargin={false}
+                    fgColor="#07152b"
+                    bgColor="#ffffff"
+                  />
+                </div>
+                <span className="text-[7.5px] font-mono font-bold text-white/80 uppercase tracking-wider mt-1">
+                  POINTAGE
+                </span>
               </div>
             </div>
 
-            {/* 4. QR CODE OFFICIEL AU BAS DU BADGE */}
-            <div className="flex flex-col items-center pt-2 mt-1.5 border-t border-white/15 w-full">
-              <div className="p-1.5 bg-white rounded-xl shadow-lg border border-white/90">
-                <QRCodeSVG
-                  value={member.id}
-                  size={48}
-                  level="M"
-                  includeMargin={false}
-                  fgColor="#07152b"
-                  bgColor="#ffffff"
-                />
-              </div>
-              <span className="text-[7.5px] font-mono font-bold text-white/70 uppercase tracking-widest mt-1">
-                POINTAGE ACCUEIL
+            {/* 3. FOOTER DU RECTO : Code Membre & Mention Système */}
+            <div className="flex items-center justify-between border-t border-white/20 pt-1.5 text-[9px] text-white/80">
+              <span className="font-mono font-bold tracking-wider">
+                ID : {memberCode}
+              </span>
+              <span className="font-mono font-bold uppercase tracking-widest text-[8px]" style={{ color: theme.chipText }}>
+                ÉGLISE CONNECT
               </span>
             </div>
 
@@ -660,14 +657,14 @@ export default function MemberIDCard({
         </div>
 
         {/* --------------------------------------------------------- */}
-        {/* FACE VERSO VERTICALE                                      */}
+        {/* FACE VERSO PAYSAGE UNIVERSELLE                            */}
         {/* --------------------------------------------------------- */}
         <div
           ref={versoRef}
           id={`member-pvc-verso-${member.id}`}
-          className="w-full rounded-[26px] overflow-hidden relative"
+          className="w-full rounded-[18px] overflow-hidden relative shadow-2xl"
           style={{
-            minHeight: '495px',
+            aspectRatio: '85.6 / 54',
             background: theme.primaryGradient,
             boxShadow: theme.borderGlow,
             display: side === 'verso' ? 'block' : 'none',
@@ -682,28 +679,26 @@ export default function MemberIDCard({
             }}
           />
 
-          {/* Fente pour tour de cou au verso */}
-          <div className="w-full flex justify-center pt-2.5 relative z-20">
-            <div className="w-12 h-1.5 rounded-full bg-black/40 border border-white/20 shadow-inner"></div>
-          </div>
-
-          {/* BANDE MAGNÉTIQUE PVC : CARTE OFFICIELLE CENTRÉE */}
-          <div className="w-full h-9 bg-black/60 mt-3 border-y border-white/10 relative z-10 flex items-center justify-center px-4 backdrop-blur-sm">
+          {/* BANDE MAGNÉTIQUE PVC PAYSAGE */}
+          <div className="w-full h-7 bg-black/75 mt-3 border-y border-white/10 relative z-10 flex items-center justify-between px-5 backdrop-blur-sm">
             <span 
-              className="text-[9.5px] font-mono tracking-widest font-extrabold uppercase"
+              className="text-[8.5px] font-mono tracking-widest font-extrabold uppercase"
               style={{ color: theme.chipText }}
             >
-              CARTE OFFICIELLE
+              CARTE OFFICIELLE DE MEMBRE
+            </span>
+            <span className="text-[8.5px] font-mono text-white/70">
+              CODE : {memberCode}
             </span>
           </div>
 
-          {/* LOGO DE L'ÉGLISE EN FILIGRANE ROND SANS CONTOUR BLANC AVEC LÉGER EFFET FLOU */}
+          {/* LOGO EN FILIGRANE */}
           {member.church.logo_url && (
             <div
-              className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 mt-8 overflow-hidden"
-              style={{ opacity: 0.14 }}
+              className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 mt-4 overflow-hidden"
+              style={{ opacity: 0.12 }}
             >
-              <div className="w-48 h-48 rounded-full overflow-hidden flex items-center justify-center filter blur-[1px]">
+              <div className="w-44 h-44 rounded-full overflow-hidden flex items-center justify-center filter blur-[1px]">
                 <img
                   src={member.church.logo_url}
                   alt="Filigrane verso"
@@ -714,17 +709,18 @@ export default function MemberIDCard({
             </div>
           )}
 
-          {/* CONTENU VERSO AÉRÉ */}
-          <div className="relative z-10 p-5 pt-3 h-[calc(100%-65px)] flex flex-col justify-between text-white text-center">
+          {/* CONTENU VERSO PAYSAGE AÉRÉ */}
+          <div className="relative z-10 p-4 pt-2.5 h-[calc(100%-40px)] flex flex-col justify-between text-white">
             
-            <div className="space-y-3">
-              {/* Informations Communauté & Code */}
-              <div className="border-b border-white/15 pb-2">
-                <p className="text-[9px] uppercase tracking-wider text-white/60 font-bold">Communauté Chrétienne</p>
-                <p className="text-sm font-black font-serif text-white mt-0.5">{member.church.name}</p>
+            {/* Grille 2 colonnes : Église (gauche) & Coordonnées (droite) */}
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              {/* Colonne Gauche : Église & Code */}
+              <div className="border-r border-white/15 pr-2 space-y-1">
+                <p className="text-[8px] uppercase tracking-wider text-white/60 font-bold">Communauté Chrétienne</p>
+                <p className="text-xs font-black font-serif text-white leading-tight truncate">{member.church.name}</p>
                 {member.church.code && (
                   <span 
-                    className="inline-block text-[9.5px] font-mono font-bold px-2 py-0.5 rounded border mt-1.5 shadow-sm"
+                    className="inline-block text-[8.5px] font-mono font-bold px-2 py-0.5 rounded border mt-1"
                     style={{ 
                       backgroundColor: theme.chipBg, 
                       color: theme.chipText,
@@ -736,75 +732,70 @@ export default function MemberIDCard({
                 )}
               </div>
 
-              {/* Bloc Coordonnées de l'Église : Contact & Localisation pour restitution */}
-              <div 
-                className="rounded-xl p-2.5 border text-center backdrop-blur-sm space-y-1.5"
-                style={{ 
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  borderColor: 'rgba(255, 255, 255, 0.12)'
-                }}
-              >
+              {/* Colonne Droite : Direction Pastorale & Contact */}
+              <div className="space-y-1">
                 <div>
                   <p 
-                    className="text-[8.5px] font-black uppercase tracking-wider"
+                    className="text-[8px] font-black uppercase tracking-wider"
                     style={{ color: theme.chipText }}
                   >
                     {pastorTitle}
                   </p>
-                  <p className="text-[11px] font-black text-white">{pastorName}</p>
+                  <p className="text-[11px] font-black text-white leading-tight truncate">{pastorName}</p>
                 </div>
 
-                {/* Téléphone & Localisation de l'église */}
-                <div className="pt-1 border-t border-white/10 space-y-1">
+                <div className="pt-1 space-y-0.5">
                   {churchContact && (
-                    <p className="text-[10px] font-bold text-white/95 font-mono flex items-center justify-center gap-1">
+                    <p className="text-[9.5px] font-bold text-white/95 font-mono flex items-center gap-1 truncate">
                       <span>📞</span>
                       <span>{churchContact}</span>
                     </p>
                   )}
                   {churchLocation && (
-                    <p className="text-[9.5px] font-medium text-white/85 flex items-center justify-center gap-1">
-                      <span className="text-[9px]">📍</span>
-                      <span className="line-clamp-1">{churchLocation}</span>
+                    <p className="text-[9px] font-medium text-white/85 flex items-center gap-1 truncate">
+                      <span>📍</span>
+                      <span className="truncate">{churchLocation}</span>
                     </p>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Note d'usage légale : Restitution en cas de perte */}
+            {/* Note d'usage légale : En cas de perte */}
             <div 
-              className="p-1.5 rounded-lg border text-center"
+              className="p-1 rounded-lg border text-center my-0.5"
               style={{
                 backgroundColor: theme.chipBg,
                 borderColor: `${theme.accentColor}33`,
               }}
             >
               <p className="text-[8px] text-white/90 leading-tight">
-                ⚠️ <strong className="font-bold">En cas de perte :</strong> Merci de rapporter cette carte à l'adresse ci-dessus ou de contacter l'accueil.
+                ⚠️ <strong className="font-bold">En cas de perte :</strong> Merci de rapporter cette carte à l&apos;adresse de l&apos;église ou de contacter l&apos;accueil.
               </p>
             </div>
 
-            {/* Signature & Code Barre visuel avec mention MUNOKOLIVE */}
-            <div className="flex flex-col items-center border-t border-white/15 pt-2">
-              <div className="flex items-center gap-1.5 opacity-70 mb-1.5">
-                <span className="w-1.5 h-4 bg-white"></span>
-                <span className="w-0.5 h-4 bg-white"></span>
-                <span className="w-2 h-4 bg-white"></span>
-                <span className="w-1 h-4 bg-white"></span>
-                <span className="w-0.5 h-4 bg-white"></span>
-                <span className="w-2.5 h-4 bg-white"></span>
-                <span className="w-1 h-4 bg-white"></span>
-                <span className="w-0.5 h-4 bg-white"></span>
+            {/* Code barre & Mentions */}
+            <div className="flex items-center justify-between border-t border-white/15 pt-1">
+              <div className="flex items-center gap-1 opacity-70">
+                <span className="w-1 h-3 bg-white"></span>
+                <span className="w-0.5 h-3 bg-white"></span>
+                <span className="w-1.5 h-3 bg-white"></span>
+                <span className="w-1 h-3 bg-white"></span>
+                <span className="w-0.5 h-3 bg-white"></span>
+                <span className="w-2 h-3 bg-white"></span>
+                <span className="w-1 h-3 bg-white"></span>
+                <span className="w-0.5 h-3 bg-white"></span>
               </div>
+
               <span className="text-[8px] text-white/70 font-mono tracking-wider">
                 ÉGLISE CONNECT • {memberCode}
               </span>
+
               <span 
-                className="text-[7.5px] font-mono tracking-widest uppercase mt-0.5 font-bold"
+                className="text-[7.5px] font-mono tracking-widest uppercase font-bold"
                 style={{ color: theme.chipText }}
               >
-                PRODUIT DU PROJET MUNOKOLIVE
+                PRODUIT MUNOKOLIVE
               </span>
             </div>
 

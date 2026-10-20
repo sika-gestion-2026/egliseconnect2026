@@ -37,6 +37,24 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Église Connect" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="theme-color" content="#1e3a8a" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                  navigator.serviceWorker.getRegistrations().then(function(regs) {
+                    for (var r of regs) { r.unregister(); }
+                  });
+                  if ('caches' in window) {
+                    caches.keys().then(function(names) {
+                      for (var name of names) { caches.delete(name); }
+                    });
+                  }
+                }
+              }
+            `,
+          }}
+        />
       </head>
       <body className="antialiased dark:bg-background" suppressHydrationWarning={true}>
         <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange>

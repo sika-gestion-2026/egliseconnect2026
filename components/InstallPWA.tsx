@@ -15,6 +15,17 @@ export function InstallPWA() {
     // Only run on client
     if (typeof window === 'undefined') return
 
+    // En environnement de dev local (localhost), désenregistrer immédiatement tout Service Worker résiduel
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          for (const registration of registrations) {
+            registration.unregister()
+          }
+        })
+      }
+    }
+
     // Check if user dismissed it previously
     if (localStorage.getItem('pwaPromptDismissed') === 'true') {
       return

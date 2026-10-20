@@ -1,7 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { markNotificationsRead } from '@/app/actions/planning'
+import { createClient } from '@/utils/supabase/client'
+import toast from 'react-hot-toast'
 
 interface Notification {
   id: string
@@ -29,8 +31,7 @@ export default function NotificationBell({ notifications }: { notifications: Not
   const unreadReminders = unread.filter(n => n.type === 'service_reminder')
 
   // Vibration d'alerte pour les rappels de culte non lus.
-  // Une seule vibration courte au montage : la version précédente vibrant en boucle
-  // toutes les 5 s untilz\u00e7e la lecture, ce qui \u00e9puisait la batterie et aga\u00e7ait l'utilisateur.
+  // Une seule vibration courte au montage
   const hasUnreadReminders = unreadReminders.length > 0
   useEffect(() => {
     if (!hasUnreadReminders) return
@@ -42,6 +43,53 @@ export default function NotificationBell({ notifications }: { notifications: Not
       // Vibration bloquée par le navigateur : ignoré silencieusement.
     }
   }, [hasUnreadReminders])
+
+  // Abonnement Supabase Realtime aux nouvelles notifications en temps réel
+  const recipientMemberId = notifications[0]?.recipient_member_id
+  useEffect(() => {
+    if (!recipientMemberId) return
+
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`member-notifications-${recipientMemberId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `recipient_member_id=eq.${recipientMemberId}`
+        },
+        (payload) => {
+          const newNotif = payload.new as Notification
+          if (!newNotif) return
+
+          // Ajouter en haut de la liste
+          setItems(prev => {
+            if (prev.some(n => n.id === newNotif.id)) return prev
+            return [newNotif, ...prev]
+          })
+
+          // Son / Vibration d'alerte instantanée
+          try {
+            if (typeof navigator !== 'undefined' && navigator.vibrate) {
+              navigator.vibrate([200, 100, 200])
+            }
+          } catch {}
+
+          // Toast d'alerte en direct
+          toast(newNotif.title || 'Nouvelle notification reçue', {
+            icon: newNotif.type === 'service_reminder' ? '📅' : '🔔',
+            duration: 5000
+          })
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [recipientMemberId])
 
   const handleOpen = async () => {
     setOpen(prev => !prev)

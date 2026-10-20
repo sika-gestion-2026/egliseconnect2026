@@ -102,7 +102,7 @@ export default function SuperAdminChurchSwitcher({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
+        <div className="absolute left-0 mt-2 w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
           <div className="p-3 bg-gradient-to-r from-primary-900 to-primary-800">
             <p className="text-gold-400 font-bold text-sm flex items-center gap-2">
               ⚡ Changer d'église

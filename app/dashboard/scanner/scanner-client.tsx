@@ -5,6 +5,7 @@ import { Html5QrcodeScanner } from 'html5-qrcode'
 import { createClient } from '@/utils/supabase/client'
 import toast from 'react-hot-toast'
 import { searchMembersAction } from '@/app/actions/searchMembers'
+import MemberIDCard from '@/components/MemberIDCard'
 
 export default function ScannerClient({ serviceId, serviceName }: { serviceId: string, serviceName: string }) {
   const [scannedResult, setScannedResult] = useState<string | null>(null)
@@ -109,7 +110,7 @@ export default function ScannerClient({ serviceId, serviceName }: { serviceId: s
     try {
       const { data: member, error: memberErr } = await supabase
         .from('members')
-        .select('id, first_name, last_name, photo_url')
+        .select('id, first_name, last_name, photo_url, phone, status, quartier, commune, churches(id, name, code, logo_url, city, commune)')
         .eq('id', memberId)
         .single()
 
@@ -278,26 +279,30 @@ export default function ScannerClient({ serviceId, serviceName }: { serviceId: s
             </div>
           )}
 
-          {/* Member Info Overlay (Success) */}
+          {/* Member Info Overlay (Success: Carte de Membre Numérique) */}
           {memberInfo && (
-            <div className="absolute inset-0 bg-green-500/90 backdrop-blur-md z-30 flex flex-col items-center justify-center p-6 text-center rounded-[2rem] animate-in zoom-in-95 duration-300">
-              <div className="w-32 h-32 mb-6 relative">
-                <div className="absolute inset-0 bg-white rounded-full animate-ping opacity-30"></div>
-                {memberInfo.photo_url ? (
-                  <img src={memberInfo.photo_url} alt="" className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-2xl relative z-10" />
-                ) : (
-                  <div className="w-32 h-32 rounded-full bg-white flex items-center justify-center text-green-600 font-black text-5xl border-4 border-green-200 shadow-2xl relative z-10">
-                    {memberInfo.first_name?.[0]}{memberInfo.last_name?.[0]}
-                  </div>
-                )}
-                <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-white rounded-full flex items-center justify-center z-20 shadow-lg text-green-500">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-md z-30 flex flex-col items-center justify-center p-4 text-center rounded-[2rem] animate-in zoom-in-95 duration-300 overflow-y-auto">
+              <div className="w-full max-w-xs scale-90 sm:scale-95 origin-center">
+                <div className="mb-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-black uppercase tracking-wider animate-bounce">
+                  <span>✓</span> Présence Pointée
                 </div>
+                <MemberIDCard
+                  member={{
+                    id: memberInfo.id,
+                    first_name: memberInfo.first_name || '',
+                    last_name: memberInfo.last_name || '',
+                    phone: memberInfo.phone,
+                    photo_url: memberInfo.photo_url,
+                    status: memberInfo.status,
+                    role_title: memberInfo.status === 'member' ? 'Membre Actif' : 'Visiteur',
+                    quartier: memberInfo.quartier,
+                    commune: memberInfo.commune,
+                    church: memberInfo.churches || { name: 'Église Connect' },
+                  }}
+                  compact={true}
+                  showActions={false}
+                />
               </div>
-              <h2 className="text-3xl font-black text-white mb-1 drop-shadow-md">
-                {memberInfo.first_name} {memberInfo.last_name}
-              </h2>
-              <p className="text-green-100 font-bold uppercase tracking-widest text-sm">Présence Validée</p>
             </div>
           )}
 

@@ -11,6 +11,7 @@ import { QRCodeSVG } from 'qrcode.react'
 import dynamic from 'next/dynamic'
 const ScannerModal = dynamic(() => import('./ScannerModal'), { ssr: false })
 import OptimizedAvatar from '@/components/OptimizedAvatar'
+import MemberIDCard, { MemberCardData } from '@/components/MemberIDCard'
 
 type MemberDashboardClientProps = {
   church: any
@@ -101,31 +102,6 @@ export default function MemberDashboardClient({ church, memberData, nextService,
   const defaultNoteTitle = nextService 
     ? `${nextService.name} - ${today.getDate()} ${mois[today.getMonth()]}` 
     : `Notes du ${jours[today.getDay()]} ${today.getDate()} ${mois[today.getMonth()]}`
-
-  const downloadBadge = async () => {
-    const element = document.getElementById('member-badge-card');
-    if (!element) return;
-    try {
-      const html2canvas = (await import('html2canvas')).default;
-      // Temporarily add a class to ensure it renders well (white background for transparent areas if needed)
-      // scale 3 provoque des crashes mémoire (OOM) sur Android d'entrée/milieu de gamme.
-      // On limite le rendu à 2x sur mobile, 3x reste acceptable sur desktop.
-      const isHighDensityMobile = /Android|iPhone|iPad/i.test(navigator.userAgent)
-      const canvas = await html2canvas(element, {
-        scale: isHighDensityMobile ? 2 : 3,
-        useCORS: true,
-        backgroundColor: '#ffffff'
-      });
-      const image = canvas.toDataURL('image/png');
-      const link = document.createElement('a');
-      link.href = image;
-      link.download = `Badge_${memberData?.first_name || 'Membre'}_${memberData?.last_name || ''}.png`;
-      link.click();
-    } catch (err) {
-      console.error('Erreur lors du téléchargement du badge', err);
-      alert("Impossible de télécharger le badge pour le moment.");
-    }
-  };
 
   return (
     <>
@@ -601,107 +577,50 @@ export default function MemberDashboardClient({ church, memberData, nextService,
       ) : activeTab === 'qrcode' ? (
         <div className="bg-gray-50 dark:bg-slate-900/50 p-4 sm:p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 animate-in fade-in slide-in-from-bottom-4 duration-300 flex flex-col items-center justify-center">
           
-          <div className="flex flex-col sm:flex-row justify-between items-center w-full max-w-md mb-6">
-            <h2 className="text-2xl font-serif text-primary-900 dark:text-gold-400 font-bold mb-4 sm:mb-0">
-              Badge Officiel
-            </h2>
-            <button 
-              onClick={downloadBadge}
-              className="flex items-center gap-2 bg-primary-900 hover:bg-primary-800 text-white px-4 py-2 rounded-full text-sm font-bold shadow-md transition-all hover:shadow-lg hover:-translate-y-0.5"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-              Télécharger
-            </button>
-          </div>
-          
-          {/* CARTE DE MEMBRE (ID CARD) */}
-          <div 
-            id="member-badge-card"
-            className="w-full max-w-sm bg-white rounded-[2rem] shadow-2xl overflow-hidden relative border border-gray-100"
-            style={{ aspectRatio: '6/10' }} // Vertical ID card proportion
-          >
-            {/* Header / Top color block */}
-            <div className="h-1/3 bg-gradient-to-br from-primary-900 via-primary-800 to-primary-950 relative">
-              {/* Decorative patterns */}
-              <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '16px 16px' }}></div>
-              <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-              
-              {/* Church Info */}
-              <div className="absolute top-6 left-0 w-full px-6 flex items-center justify-between z-10">
-                <div className="flex items-center gap-3">
-                  {church?.logo_url && (
-                    <div className="w-10 h-10 bg-white rounded-full p-1 shadow-md shrink-0">
-                      <img src={church.logo_url} className="w-full h-full object-cover rounded-full" alt="Logo" crossOrigin="anonymous" />
-                    </div>
-                  )}
-                  <div>
-                    <p className="text-white font-serif font-bold leading-tight drop-shadow-md line-clamp-2">{church?.name || 'Église Connect'}</p>
-                    <p className="text-primary-200 text-[10px] uppercase tracking-widest font-bold">Membre Officiel</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Photo overlaps header and body */}
-              <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 z-20">
-                <div className="p-1.5 bg-white rounded-full shadow-xl">
-                  {memberData?.photo_url ? (
-                    <img 
-                      src={memberData.photo_url} 
-                      alt="Photo" 
-                      className="w-24 h-24 rounded-full object-cover border-4 border-gray-50"
-                      crossOrigin="anonymous" 
-                    />
-                  ) : (
-                    <div className="w-24 h-24 rounded-full bg-gray-100 border-4 border-gray-50 flex items-center justify-center font-bold text-gray-400 text-3xl">
-                      {memberData?.first_name?.[0]}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Body */}
-            <div className="h-2/3 bg-white pt-16 px-6 pb-6 flex flex-col items-center text-center relative z-10">
-              
-              <h3 className="text-2xl font-bold text-gray-900 mb-1 leading-tight">
-                {memberData ? `${memberData.first_name} ${memberData.last_name}` : 'Utilisateur'}
-              </h3>
-              
-              {/* Member role/function */}
-              <div className="inline-block bg-primary-50 text-primary-900 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-6">
-                {ledDepartments && ledDepartments.length > 0 ? 'Responsable' : 'Fidèle'}
-              </div>
-
-              {/* QR Code Container */}
-              <div className="flex-1 w-full flex items-center justify-center">
-                <div className="p-3 bg-white rounded-2xl shadow-[0_0_15px_rgba(0,0,0,0.05)] border border-gray-100">
-                  {memberData ? (
-                    <QRCodeSVG 
-                      value={memberData.id}
-                      size={140}
-                      bgColor={"#ffffff"}
-                      fgColor={"#0f172a"}
-                      level={"Q"}
-                      includeMargin={false}
-                    />
-                  ) : (
-                    <div className="w-[140px] h-[140px] bg-gray-50 flex items-center justify-center text-gray-300 text-xs">N/A</div>
-                  )}
-                </div>
-              </div>
-
-              {/* Footer ID */}
-              <div className="w-full mt-4 pt-4 border-t border-dashed border-gray-200">
-                <p className="text-[10px] text-gray-400 font-mono tracking-widest">
-                  ID: {memberData?.id ? memberData.id.split('-')[0].toUpperCase() : '000000'}
-                </p>
-              </div>
-              
+          <div className="flex flex-col sm:flex-row justify-between items-center w-full max-w-sm mb-6">
+            <div>
+              <h2 className="text-2xl font-serif text-primary-900 dark:text-gold-400 font-bold">
+                Carte de Membre
+              </h2>
+              <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Badge numérique officiel avec QR code</p>
             </div>
           </div>
           
-          <p className="text-sm text-gray-500 mt-6 text-center max-w-xs">
-            Cette carte est strictement personnelle. Présentez-la au scanner de l'église.
+          {memberData ? (
+            <MemberIDCard
+              member={{
+                id: memberData.id,
+                first_name: memberData.first_name || '',
+                last_name: memberData.last_name || '',
+                phone: memberData.phone,
+                email: memberData.email,
+                photo_url: memberData.photo_url,
+                status: memberData.status,
+                role_title: memberData.primary_department || (ledDepartments && ledDepartments.length > 0 ? 'Responsable' : 'Fidèle'),
+                commune: memberData.commune,
+                quartier: memberData.quartier,
+                church: {
+                  id: church?.id,
+                  name: church?.name || 'Église Connect',
+                  code: church?.code,
+                  logo_url: church?.logo_url,
+                  city: church?.city,
+                  commune: church?.commune,
+                  quartier: church?.quartier,
+                  leader_name: church?.leader_name,
+                  leader_contact: church?.leader_contact,
+                  leader_title: church?.leader_title,
+                  theme_color: church?.theme_color,
+                },
+              }}
+              showActions={true}
+            />
+          ) : (
+            <div className="text-center p-8 text-gray-400">Chargement de la carte...</div>
+          )}
+          
+          <p className="text-xs text-gray-500 mt-6 text-center max-w-xs">
+            Cette carte est strictement personnelle. Présentez-la à l'accueil pour vos pointages rapides.
           </p>
         </div>
       ) : (

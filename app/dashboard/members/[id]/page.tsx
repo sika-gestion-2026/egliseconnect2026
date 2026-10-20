@@ -39,7 +39,7 @@ export default async function MemberDetailPage(props: {
 
   let memberQuery = supabase
     .from('members')
-    .select('*')
+    .select('*, churches(id, name, code, logo_url, city, commune, quartier, leader_name, leader_contact, leader_title, theme_color)')
     .eq('id', params.id)
     
   if (profile?.role !== 'super_admin' && profile?.church_id) {
@@ -234,7 +234,17 @@ export default async function MemberDetailPage(props: {
             </div>
           </div>
 
-          <MemberQRCode memberId={member.id} memberName={`${member.first_name} ${member.last_name}`} />
+          <MemberQRCode 
+            memberId={member.id} 
+            memberName={`${member.first_name} ${member.last_name}`}
+            phone={member.phone}
+            photoUrl={member.photo_url}
+            status={member.status}
+            roleTitle={(member as any).primary_department || (functionsList.length > 0 ? functionsList[0] : (member.status === 'member' ? 'Membre Actif' : 'Fidèle'))}
+            quartier={member.quartier}
+            commune={member.commune}
+            church={member.churches || { name: 'Église Connect' }}
+          />
           
           {/* Accès Espace Fidèle (Surprise) */}
           <div className="bg-gradient-to-br from-primary-900 to-slate-900 rounded-xl shadow-lg p-6 text-white space-y-4 relative overflow-hidden border border-gold-500/30">

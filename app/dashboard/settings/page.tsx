@@ -38,15 +38,27 @@ export default async function SettingsPage() {
       }
     }
 
+    const leaderContact = (formData.get('leader_contact') as string | null)?.trim() || null
+    const city = (formData.get('city') as string | null)?.trim() || null
+    const commune = (formData.get('commune') as string | null)?.trim() || null
+    const quartier = (formData.get('quartier') as string | null)?.trim() || null
+    const themeColor = (formData.get('theme_color') as string | null)?.trim() || null
+
     await sb.from('churches').update({
       name: formData.get('name'),
       vision: formData.get('vision'),
       leader_name: formData.get('leader_name'),
+      leader_contact: leaderContact,
+      city: city,
+      commune: commune,
+      quartier: quartier,
+      theme_color: themeColor,
       logo_url: finalLogoUrl,
     }).eq('id', p?.church_id)
 
     revalidatePath('/dashboard/settings')
     revalidatePath('/dashboard')
+    revalidatePath('/member-dashboard')
   }
 
   return (

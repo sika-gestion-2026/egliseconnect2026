@@ -72,6 +72,22 @@ export default function SettingsClient({ church, updateChurchAction }: { church:
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Nom du Responsable</label>
                 <input name="leader_name" defaultValue={church?.leader_name || ''} className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border-none rounded-xl focus:ring-2 focus:ring-primary-500 transition-all" />
               </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Contact Téléphonique de l'Église</label>
+                <input name="leader_contact" defaultValue={church?.leader_contact || ''} placeholder="+243..." className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border-none rounded-xl focus:ring-2 focus:ring-primary-500 transition-all font-mono" />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Ville</label>
+                <input name="city" defaultValue={church?.city || ''} placeholder="Kinshasa, Paris..." className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border-none rounded-xl focus:ring-2 focus:ring-primary-500 transition-all" />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Commune</label>
+                <input name="commune" defaultValue={church?.commune || ''} placeholder="Gombe, Lingwala..." className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border-none rounded-xl focus:ring-2 focus:ring-primary-500 transition-all" />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Quartier</label>
+                <input name="quartier" defaultValue={church?.quartier || ''} placeholder="Quartier..." className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border-none rounded-xl focus:ring-2 focus:ring-primary-500 transition-all" />
+              </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Vision & Mission</label>
                 <textarea name="vision" defaultValue={church?.vision || ''} rows={3} className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border-none rounded-xl focus:ring-2 focus:ring-primary-500 transition-all" placeholder="La vision de votre église..."></textarea>

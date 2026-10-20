@@ -23,9 +23,25 @@
         "action_type",
         "church_id",
         "created_at",
+        "description",
         "details",
         "id",
+        "metadata",
         "user_id"
+      ]
+    },
+    {
+      "table": "church_announcements",
+      "columns": [
+        "church_id",
+        "content",
+        "created_at",
+        "created_by",
+        "id",
+        "is_active",
+        "title",
+        "updated_at",
+        "verses"
       ]
     },
     {
@@ -36,6 +52,13 @@
         "description",
         "id",
         "name"
+      ]
+    },
+    {
+      "table": "church_finance_balance",
+      "columns": [
+        "balance",
+        "church_id"
       ]
     },
     {
@@ -66,12 +89,23 @@
       ]
     },
     {
+      "table": "church_stats",
+      "columns": [
+        "attendance_count",
+        "church_id",
+        "member_count"
+      ]
+    },
+    {
       "table": "churches",
       "columns": [
         "city",
         "code",
         "commune",
         "created_at",
+        "custom_verse_ref",
+        "custom_verse_text",
+        "edification_mode",
         "id",
         "latitude",
         "leader_contact",
@@ -109,17 +143,56 @@
       ]
     },
     {
+      "table": "kids",
+      "columns": [
+        "allergies",
+        "created_at",
+        "date_of_birth",
+        "first_name",
+        "id",
+        "last_name",
+        "medical_notes",
+        "parent_id",
+        "updated_at"
+      ]
+    },
+    {
+      "table": "kids_checkins",
+      "columns": [
+        "checked_in_at",
+        "checked_in_by",
+        "checked_out_at",
+        "checked_out_by",
+        "id",
+        "kid_id",
+        "security_code",
+        "service_id"
+      ]
+    },
+    {
+      "table": "member_login_attempts",
+      "columns": [
+        "created_at",
+        "id",
+        "identifier_hash",
+        "succeeded"
+      ]
+    },
+    {
       "table": "member_notes",
       "columns": [
         "author_id",
+        "church_id",
         "content",
         "created_at",
         "id",
         "is_private",
         "member_id",
         "service_id",
+        "title",
         "type",
-        "updated_at"
+        "updated_at",
+        "verses"
       ]
     },
     {
@@ -193,6 +266,35 @@
       ]
     },
     {
+      "table": "pastoral_visits",
+      "columns": [
+        "assigned_to",
+        "church_id",
+        "created_at",
+        "created_by",
+        "id",
+        "member_id",
+        "motif",
+        "priority",
+        "report",
+        "status",
+        "visit_date"
+      ]
+    },
+    {
+      "table": "prayer_requests",
+      "columns": [
+        "author_name",
+        "church_id",
+        "content",
+        "created_at",
+        "id",
+        "is_anonymous",
+        "member_id",
+        "prayer_count"
+      ]
+    },
+    {
       "table": "service_assignments",
       "columns": [
         "created_at",
@@ -221,16 +323,64 @@
       ]
     },
     {
+      "table": "sms_campaign_recipients",
+      "columns": [
+        "campaign_id",
+        "error_message",
+        "id",
+        "member_id",
+        "phone",
+        "status",
+        "updated_at"
+      ]
+    },
+    {
+      "table": "sms_campaigns",
+      "columns": [
+        "audience_size",
+        "church_id",
+        "created_at",
+        "created_by",
+        "error_message",
+        "id",
+        "message",
+        "provider",
+        "provider_message_id",
+        "sent_at",
+        "status",
+        "target_type",
+        "target_value"
+      ]
+    },
+    {
+      "table": "system_backups",
+      "columns": [
+        "backup_type",
+        "created_at",
+        "created_by",
+        "data_payload",
+        "description",
+        "id",
+        "snapshot_date",
+        "total_churches",
+        "total_members"
+      ]
+    },
+    {
       "table": "user_profiles",
       "columns": [
+        "avatar_url",
         "church_id",
         "created_at",
         "email",
+        "first_name",
+        "full_name",
         "id",
+        "last_name",
         "member_id",
         "role"
       ]
     }
   ],
-  "generatedAt": "2026-10-05T12:24:30.175Z"
+  "generatedAt": "2026-10-20T11:36:32.755Z"
 }

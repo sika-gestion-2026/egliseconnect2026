@@ -6,6 +6,8 @@ import RealTimeClock from '@/components/RealTimeClock'
 import Link from 'next/link'
 import { enterChurchAction } from './actions'
 import LogoutConfirmButton from '@/components/LogoutConfirmButton'
+import SuperAdminBackupWidget from '@/components/SuperAdminBackupWidget'
+import { getRecentBackupsAction } from '@/app/actions/backupRestore'
 
 export default async function SuperAdminDashboard() {
   const cookieStore = await cookies()
@@ -50,6 +52,8 @@ export default async function SuperAdminDashboard() {
 
   const activeChurches = churchList.filter(c => c.status === 'active').length
 
+  const { backups } = await getRecentBackupsAction()
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="bg-primary-900 border-b-2 border-gold-500 py-4 px-8 flex justify-between items-center text-white">
@@ -69,6 +73,9 @@ export default async function SuperAdminDashboard() {
           </div>
           <RealTimeClock />
         </div>
+
+        {/* Coffre-fort & Restauration en 1 Clic (Fenêtre 48h) */}
+        <SuperAdminBackupWidget initialBackups={backups || []} />
 
         {/* Statistiques globales */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">

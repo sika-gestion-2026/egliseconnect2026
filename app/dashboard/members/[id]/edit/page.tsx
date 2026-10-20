@@ -56,6 +56,7 @@ export default async function EditMember(props: { params: Promise<{ id: string }
     const baptized = formData.get('baptized') === 'true'
     const baptismChurch = formData.get('baptism_church') as string || null
     const functions = formData.getAll('functions') as string[] // array of selected checkboxes
+    const primaryDepartment = (formData.get('primary_department') as string | null)?.trim() || (functions.length > 0 ? functions[0] : null)
     
     const maritalStatus = formData.get('marital_status') as string
     const childrenCount = parseInt(formData.get('children_count') as string || '0', 10)
@@ -98,6 +99,7 @@ export default async function EditMember(props: { params: Promise<{ id: string }
       baptized,
       baptism_church: baptismChurch,
       functions: JSON.stringify(functions),
+      primary_department: primaryDepartment,
       marital_status: maritalStatus,
       children_count: childrenCount,
       profession,
@@ -210,7 +212,24 @@ export default async function EditMember(props: { params: Promise<{ id: string }
           </div>
 
           <div className="mt-4">
-            <label className="block text-sm font-medium mb-2">Départements / Rôles dans l'église (Cochez tout ce qui s'applique)</label>
+            <label className="block text-sm font-medium mb-1 text-primary-900 dark:text-gold-400 font-bold">
+              ★ Département Principal (Affiché sur la Carte d'Identité de Membre)
+            </label>
+            <p className="text-xs text-gray-500 mb-2">
+              Le membre peut appartenir à plusieurs départements, mais seul ce département principal figurera sur son badge.
+            </p>
+            <select 
+              name="primary_department" 
+              defaultValue={(member as any).primary_department || (functionsList.length > 0 ? functionsList[0] : '')}
+              className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-700 font-semibold text-primary-900 dark:text-white mb-4"
+            >
+              <option value="">Sélectionner le département principal...</option>
+              {churchFunctions.map((fn, idx) => (
+                <option key={idx} value={fn}>{fn}</option>
+              ))}
+            </select>
+
+            <label className="block text-sm font-medium mb-2">Tous les Départements & Groupes d'appartenance (Cochez tout ce qui s'applique)</label>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {churchFunctions.map((fn, idx) => (
                 <label key={idx} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors cursor-pointer text-sm">

@@ -508,7 +508,7 @@ export default function MemberIDCard({
           id={`member-pvc-recto-${member.id}`}
           className="w-full rounded-[26px] overflow-hidden relative"
           style={{
-            aspectRatio: '0.628 / 1', // Format Badge Tour de cou ISO 7810 (54/86)
+            minHeight: '495px',
             background: theme.primaryGradient,
             boxShadow: theme.borderGlow,
             display: side === 'recto' ? 'block' : 'none',
@@ -535,12 +535,12 @@ export default function MemberIDCard({
           />
 
           {/* CONTENU PRINCIPAL DU BADGE VERTICAL */}
-          <div className="relative z-10 h-[calc(100%-16px)] px-5 pb-5 pt-1.5 flex flex-col justify-between items-center text-center">
+          <div className="relative z-10 w-full px-4 pt-1 pb-4 flex flex-col items-center text-center">
             
             {/* 1. EN-TÊTE : Logo Église + Nom Église + Département */}
             <div className="w-full flex flex-col items-center">
               {/* Logo église rond : REMPLIT PARFAITEMENT LE FOND BLANC */}
-              <div className="w-14 h-14 rounded-full bg-white shadow-lg overflow-hidden ring-2 ring-white/90 flex items-center justify-center p-0.5">
+              <div className="w-13 h-13 rounded-full bg-white shadow-lg overflow-hidden ring-2 ring-white/90 flex items-center justify-center p-0.5 shrink-0">
                 {member.church.logo_url ? (
                   <img
                     src={member.church.logo_url}
@@ -556,13 +556,13 @@ export default function MemberIDCard({
               </div>
 
               {/* Nom de l'église en BLANC pur bien visible */}
-              <h3 className="font-black font-serif text-white tracking-wide text-[13px] leading-tight uppercase drop-shadow-md mt-2 w-full text-center">
+              <h3 className="font-black font-serif text-white tracking-wide text-[12.5px] leading-tight uppercase drop-shadow-md mt-1.5 w-full text-center px-1">
                 {member.church.name}
               </h3>
 
               {/* Département d'affectation aux couleurs de l'église */}
               <div 
-                className="mt-1 px-3.5 py-1 rounded-full border shadow-sm backdrop-blur-md"
+                className="mt-1 px-3 py-0.5 rounded-full border shadow-sm backdrop-blur-md max-w-full"
                 style={{ 
                   backgroundColor: theme.chipBg, 
                   borderColor: `${theme.accentColor}55` 
@@ -570,7 +570,7 @@ export default function MemberIDCard({
               >
                 <p 
                   title={displayRole}
-                  className="font-extrabold uppercase tracking-wider text-[11px] leading-none drop-shadow-sm"
+                  className="font-extrabold uppercase tracking-wider text-[10.5px] leading-tight drop-shadow-sm truncate"
                   style={{ color: theme.chipText }}
                 >
                   {displayRole}
@@ -579,9 +579,9 @@ export default function MemberIDCard({
             </div>
 
             {/* 2. PHOTO DU MEMBRE AVEC CADRE OR & COCHE */}
-            <div className="relative my-1">
+            <div className="relative my-2 shrink-0">
               <div
-                className="w-24 h-24 rounded-2xl p-0.5 shadow-2xl relative overflow-hidden"
+                className="w-22 h-22 rounded-2xl p-0.5 shadow-2xl relative overflow-hidden"
                 style={{ background: theme.accentGradient }}
               >
                 {member.photo_url ? (
@@ -592,7 +592,7 @@ export default function MemberIDCard({
                     crossOrigin="anonymous"
                   />
                 ) : (
-                  <div className="w-full h-full rounded-[14px] bg-slate-900 flex items-center justify-center text-white font-bold text-3xl font-serif">
+                  <div className="w-full h-full rounded-[14px] bg-slate-900 flex items-center justify-center text-white font-bold text-2xl font-serif">
                     {firstName[0]}
                     {lastName[0]}
                   </div>
@@ -600,7 +600,7 @@ export default function MemberIDCard({
               </div>
               {/* Badge Certifié */}
               <div
-                className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-white text-[11px] font-black shadow-md border-2 border-white"
+                className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-black shadow-md border-2 border-white"
                 style={{ backgroundColor: theme.accentColor }}
               >
                 ✓
@@ -608,31 +608,31 @@ export default function MemberIDCard({
             </div>
 
             {/* 3. NOM ET PRÉNOM : Prénom avec couleur accent de l'église, Nom en Blanc Majuscule */}
-            <div className="w-full">
+            <div className="w-full px-1">
               <div className="flex items-baseline justify-center gap-1.5 flex-wrap leading-tight">
                 <span 
-                  className="text-[14px] font-extrabold uppercase tracking-wide drop-shadow-sm"
+                  className="text-[13.5px] font-extrabold uppercase tracking-wide drop-shadow-sm"
                   style={{ color: theme.chipText }}
                 >
                   {firstName}
                 </span>
-                <span className="text-[16px] font-black text-white uppercase tracking-tight drop-shadow-sm">
+                <span className="text-[15.5px] font-black text-white uppercase tracking-tight drop-shadow-sm">
                   {lastName}
                 </span>
               </div>
 
               {/* Téléphone et Localisation avec tout l'espace requis */}
-              <div className="mt-2 space-y-1 text-center">
+              <div className="mt-1 space-y-0.5 text-center">
                 {member.phone && (
-                  <p className="text-[11.5px] font-bold text-white/95 flex items-center justify-center gap-1.5">
-                    <span className="text-[11px]">📞</span>
+                  <p className="text-[11px] font-bold text-white/95 flex items-center justify-center gap-1">
+                    <span className="text-[10px]">📞</span>
                     <span>{member.phone}</span>
                   </p>
                 )}
 
                 {(member.quartier || member.commune) && (
-                  <p className="text-[11px] font-medium text-white/80 flex items-center justify-center gap-1">
-                    <span className="text-[10px]">📍</span>
+                  <p className="text-[10.5px] font-medium text-white/80 flex items-center justify-center gap-1">
+                    <span className="text-[9.5px]">📍</span>
                     <span>{[member.quartier, member.commune].filter(Boolean).join(' • ')}</span>
                   </p>
                 )}
@@ -640,11 +640,11 @@ export default function MemberIDCard({
             </div>
 
             {/* 4. QR CODE OFFICIEL AU BAS DU BADGE */}
-            <div className="flex flex-col items-center pt-1 border-t border-white/15 w-full">
+            <div className="flex flex-col items-center pt-2 mt-1.5 border-t border-white/15 w-full">
               <div className="p-1.5 bg-white rounded-xl shadow-lg border border-white/90">
                 <QRCodeSVG
                   value={member.id}
-                  size={46}
+                  size={48}
                   level="M"
                   includeMargin={false}
                   fgColor="#07152b"
@@ -667,7 +667,7 @@ export default function MemberIDCard({
           id={`member-pvc-verso-${member.id}`}
           className="w-full rounded-[26px] overflow-hidden relative"
           style={{
-            aspectRatio: '0.628 / 1', // Format Badge Tour de cou ISO 7810 (54/86)
+            minHeight: '495px',
             background: theme.primaryGradient,
             boxShadow: theme.borderGlow,
             display: side === 'verso' ? 'block' : 'none',

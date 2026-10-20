@@ -33,46 +33,66 @@ export async function processCheckinScan(scannedText: string) {
       return { success: false, error: "Vous n'êtes pas autorisé à pointer les présences." }
     }
 
-    // Verify format: EGLISE_CONNECT_CHECKIN_{service_id}
+    // Supporte deux formats de scan :
+    // 1. Pointage par QR Code du culte : "EGLISE_CONNECT_CHECKIN_{serviceId}" (le fidèle scanne l'affiche du culte)
+    // 2. Pointage par QR Code du membre : UUID du membre (l'accueil scanne la carte du membre)
     const prefix = "EGLISE_CONNECT_CHECKIN_"
-    if (!scannedText.startsWith(prefix)) {
-      return { success: false, error: "QR Code non reconnu. Scannez le QR Code officiel de l'église." }
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(scannedText.trim())
+
+    let serviceId: string
+    let targetMemberId: string = profile.member_id
+
+    if (scannedText.startsWith(prefix)) {
+      serviceId = scannedText.substring(prefix.length)
+      // Vérifier que le culte appartient à l'église de l'utilisateur
+      const { data: service } = await supabase
+        .from('church_services')
+        .select('id')
+        .eq('id', serviceId)
+        .eq('church_id', profile.church_id)
+        .single()
+
+      if (!service) {
+        return { success: false, error: "Culte introuvable ou n'appartient pas à votre église." }
+      }
+    } else if (isUuid) {
+      // C'est la carte d'un membre scannée à l'accueil
+      const scannedMemberId = scannedText.trim()
+      const { data: member } = await supabase
+        .from('members')
+        .select('id, first_name, last_name, church_id')
+        .eq('id', scannedMemberId)
+        .single()
+
+      if (!member || member.church_id !== profile.church_id) {
+        return { success: false, error: "Membre introuvable ou n'appartient pas à cette église." }
+      }
+      targetMemberId = member.id
+
+      // Trouver le culte actif du jour pour cette église
+      const today = new Date().toISOString().split('T')[0]
+      const { data: activeService } = await supabase
+        .from('church_services')
+        .select('id, name')
+        .eq('church_id', profile.church_id)
+        .eq('service_date', today)
+        .order('service_time', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (!activeService) {
+        return { success: false, error: "Aucun culte programmé aujourd'hui pour enregistrer le pointage." }
+      }
+      serviceId = activeService.id
+    } else {
+      return { success: false, error: "QR Code non reconnu. Scannez une carte de membre ou le code officiel d'un culte." }
     }
 
-    const serviceId = scannedText.substring(prefix.length)
-
-    // Check if service belongs to the church
-    const { data: service } = await supabase
-      .from('church_services')
-      .select('id')
-      .eq('id', serviceId)
-      .eq('church_id', profile.church_id)
-      .single()
-
-    if (!service) {
-      return { success: false, error: "Culte introuvable ou n'appartient pas à votre église." }
-    }
-
-    // Enregistre la présence dans `service_declarations`.
-    //
-    // Deux pièges corrigés ici :
-    //
-    // 1. `church_id` n'existe pas sur `service_declarations`. Son schéma passe
-    //    par `member_id → members.church_id`. La colonne envoyée faisait échouer
-    //    l'upsert ENTIER (PostgREST rejette la requête dès qu'un champ est
-    //    inconnu), et l'appel est suivi d'un `throw` : le pointage de présence
-    //    était cassé. L'église est déjà vérifiée ci-dessus, via le service.
-    //
-    // 2. L'`onConflict` exige une contrainte unique sur
-    //    `(service_id, member_id)`, absente de toutes les migrations. Elle est
-    //    créée par `20261005080000`. Sans elle, l'erreur est « there is no
-    //    unique or exclusion constraint matching the ON CONFLICT
-    //    specification ».
     const { error: declError } = await supabase
       .from('service_declarations')
       .upsert({
         service_id: serviceId,
-        member_id: profile.member_id,
+        member_id: targetMemberId,
         status: 'present'
       }, { onConflict: 'service_id,member_id' })
 

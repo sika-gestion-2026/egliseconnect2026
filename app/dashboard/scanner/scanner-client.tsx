@@ -135,8 +135,13 @@ export default function ScannerClient({ serviceId, serviceName }: { serviceId: s
         throw new Error("Erreur DB")
       } else {
         toast.success(`${member.first_name} pointé(e) présent(e) !`)
-        const audio = new Audio('/success.mp3')
-        audio.play().catch(e => {})
+        try {
+          if ('vibrate' in navigator) {
+            navigator.vibrate([100, 50, 100])
+          }
+          const audio = new Audio('/success.mp3')
+          audio.play().catch(() => {})
+        } catch (_) {}
         
         // Update local state immediately
         setTotalPresent(prev => prev + 1)

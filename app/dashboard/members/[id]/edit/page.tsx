@@ -88,7 +88,11 @@ export default async function EditMember(props: { params: Promise<{ id: string }
       }
     }
     
-    let updateQuery = sb.from('members').update({
+    const allFunctions = primaryDepartment 
+      ? [primaryDepartment, ...functions.filter(f => f !== primaryDepartment)]
+      : functions
+
+    const updatePayload: Record<string, any> = {
       first_name: firstName,
       last_name: lastName,
       gender,
@@ -98,7 +102,7 @@ export default async function EditMember(props: { params: Promise<{ id: string }
       status,
       baptized,
       baptism_church: baptismChurch,
-      functions: JSON.stringify(functions),
+      functions: JSON.stringify(allFunctions),
       primary_department: primaryDepartment,
       marital_status: maritalStatus,
       children_count: childrenCount,
@@ -109,13 +113,26 @@ export default async function EditMember(props: { params: Promise<{ id: string }
       pastoral_notes: pastoralNotes,
       needs_support: needsSupport,
       photo_url: finalPhotoUrl
-    }).eq('id', params.id);
+    }
+
+    let updateQuery = sb.from('members').update(updatePayload).eq('id', params.id);
     
     if (profile?.role !== 'super_admin' && profile?.church_id) {
       updateQuery = updateQuery.eq('church_id', profile.church_id);
     }
     
-    const { error } = await updateQuery;
+    let { error } = await updateQuery;
+
+    // Si la colonne primary_department n'existe pas encore en base distante
+    if (error && error.message?.includes('primary_department')) {
+      delete updatePayload.primary_department
+      let fallbackQuery = sb.from('members').update(updatePayload).eq('id', params.id);
+      if (profile?.role !== 'super_admin' && profile?.church_id) {
+        fallbackQuery = fallbackQuery.eq('church_id', profile.church_id);
+      }
+      const retry = await fallbackQuery;
+      error = retry.error;
+    }
     
     if (!error) {
       revalidatePath(`/dashboard/members/${params.id}`)

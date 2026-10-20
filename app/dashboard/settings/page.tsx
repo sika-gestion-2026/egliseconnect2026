@@ -43,8 +43,7 @@ export default async function SettingsPage() {
     const commune = (formData.get('commune') as string | null)?.trim() || null
     const quartier = (formData.get('quartier') as string | null)?.trim() || null
     const themeColor = (formData.get('theme_color') as string | null)?.trim() || null
-
-    await sb.from('churches').update({
+    const updatePayload: Record<string, any> = {
       name: formData.get('name'),
       vision: formData.get('vision'),
       leader_name: formData.get('leader_name'),
@@ -52,9 +51,18 @@ export default async function SettingsPage() {
       city: city,
       commune: commune,
       quartier: quartier,
-      theme_color: themeColor,
       logo_url: finalLogoUrl,
-    }).eq('id', p?.church_id)
+    }
+    if (themeColor) {
+      updatePayload.theme_color = themeColor
+    }
+
+    const { error: updateError } = await sb.from('churches').update(updatePayload).eq('id', p?.church_id)
+
+    if (updateError && updateError.message?.includes('theme_color')) {
+      delete updatePayload.theme_color
+      await sb.from('churches').update(updatePayload).eq('id', p?.church_id)
+    }
 
     revalidatePath('/dashboard/settings')
     revalidatePath('/dashboard')

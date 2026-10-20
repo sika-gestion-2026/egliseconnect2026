@@ -39,7 +39,7 @@ export default async function MemberDetailPage(props: {
 
   let memberQuery = supabase
     .from('members')
-    .select('*, churches(id, name, code, logo_url, city, commune, quartier, leader_name, leader_contact, leader_title, theme_color)')
+    .select('*, churches(id, name, code, logo_url, city, commune, quartier, leader_name, leader_contact, leader_title)')
     .eq('id', params.id)
     
   if (profile?.role !== 'super_admin' && profile?.church_id) {

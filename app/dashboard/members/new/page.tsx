@@ -32,6 +32,12 @@ export default async function NewMember() {
     const functions = formData.getAll('functions') as string[] // array of selected checkboxes
     const primaryDepartment = (formData.get('primary_department') as string | null)?.trim() || (functions.length > 0 ? functions[0] : null)
     
+    // Le département principal est toujours inclus en tête de liste pour garantir la compatibilité
+    const allFunctions = primaryDepartment 
+      ? [primaryDepartment, ...functions.filter(f => f !== primaryDepartment)]
+      : functions
+    const functionsWithPrimary = JSON.stringify(allFunctions)
+    
     const maritalStatus = formData.get('marital_status') as string
     const childrenCount = parseInt(formData.get('children_count') as string || '0', 10)
     const profession = formData.get('profession') as string || null
@@ -62,7 +68,7 @@ export default async function NewMember() {
       }
     }
     
-    const { error } = await supabase.from('members').insert({
+    const memberPayload: Record<string, any> = {
       church_id: profile.church_id,
       first_name: firstName,
       last_name: lastName,
@@ -73,7 +79,7 @@ export default async function NewMember() {
       status,
       baptized,
       baptism_church: baptismChurch,
-      functions: JSON.stringify(functions),
+      functions: functionsWithPrimary,
       primary_department: primaryDepartment,
       marital_status: maritalStatus,
       children_count: childrenCount,
@@ -84,7 +90,16 @@ export default async function NewMember() {
       pastoral_notes: pastoralNotes,
       needs_support: needsSupport,
       photo_url: finalPhotoUrl
-    })
+    }
+
+    let { error } = await supabase.from('members').insert(memberPayload)
+
+    // Si la colonne SQL primary_department n'a pas encore été créée en base distante
+    if (error && error.message?.includes('primary_department')) {
+      delete memberPayload.primary_department
+      const retry = await supabase.from('members').insert(memberPayload)
+      error = retry.error
+    }
     
     if (!error) {
       redirect('/dashboard/members')

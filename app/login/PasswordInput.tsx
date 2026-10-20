@@ -8,6 +8,9 @@ interface PasswordInputProps {
   label?: string
   placeholder?: string
   minLength?: number
+  value?: string
+  defaultValue?: string
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void
 }
 
 export function PasswordInput({
@@ -15,7 +18,10 @@ export function PasswordInput({
   name = "password",
   label = "Mot de passe",
   placeholder = "••••••••",
-  minLength
+  minLength,
+  value,
+  defaultValue,
+  onChange
 }: PasswordInputProps = {}) {
   const [showPassword, setShowPassword] = useState(false)
 
@@ -31,6 +37,9 @@ export function PasswordInput({
           type={showPassword ? "text" : "password"}
           required
           minLength={minLength}
+          value={value}
+          defaultValue={defaultValue}
+          onChange={onChange}
           className="w-full px-4 py-3 border rounded-xl border-gray-300 dark:border-gray-700 dark:bg-slate-800 focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-shadow pr-12 outline-none relative z-0"
           placeholder={placeholder}
         />

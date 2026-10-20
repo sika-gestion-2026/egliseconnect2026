@@ -14,6 +14,7 @@ interface SavedProfile {
   church_logo: string
   role: 'admin' | 'member'
   email?: string
+  password?: string
   identifier?: string
   church_code?: string
 }
@@ -31,15 +32,36 @@ function LoginContent() {
   // Form states
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(errorMsgParams)
-  const [rememberMe, setRememberMe] = useState(false)
+  const [rememberMe, setRememberMe] = useState(true)
   
   // Saved profile state
   const [savedProfile, setSavedProfile] = useState<SavedProfile | null>(null)
   const [showSavedProfile, setShowSavedProfile] = useState(false)
+  const [adminEmail, setAdminEmail] = useState('')
+  const [adminPassword, setAdminPassword] = useState('')
+  const [memberChurchCode, setMemberChurchCode] = useState('')
+  const [memberIdentifier, setMemberIdentifier] = useState('')
 
   // Auto-read profile from cookie (set by server) or localStorage
   useEffect(() => {
-    // 1. Try reading from the server-set 'profile_hint' cookie (most reliable)
+    // 1. Priorité au localStorage où sont conservées les informations de reconnexion 1-clic
+    const stored = localStorage.getItem('rememberedProfile');
+    if (stored) {
+      try {
+        const profile = JSON.parse(stored) as SavedProfile;
+        setSavedProfile(profile);
+        setShowSavedProfile(true);
+        if (profile.email) setAdminEmail(profile.email);
+        if (profile.password) setAdminPassword(profile.password);
+        if (profile.church_code) setMemberChurchCode(profile.church_code);
+        if (profile.identifier) setMemberIdentifier(profile.identifier);
+        return;
+      } catch (e) {
+        localStorage.removeItem('rememberedProfile');
+      }
+    }
+
+    // 2. Fallback sur le cookie profile_hint (posé par le serveur)
     const getCookieValue = (name: string) => {
       const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
       return match ? match[2] : null;
@@ -51,22 +73,9 @@ function LoginContent() {
         const profile = JSON.parse(atob(hintCookie)) as SavedProfile;
         setSavedProfile(profile);
         setShowSavedProfile(true);
-        // Sync to localStorage too
+        if (profile.email) setAdminEmail(profile.email);
         localStorage.setItem('rememberedProfile', JSON.stringify(profile));
-        return;
       } catch (e) {}
-    }
-    
-    // 2. Fallback to localStorage
-    const stored = localStorage.getItem('rememberedProfile');
-    if (stored) {
-      try {
-        const profile = JSON.parse(stored) as SavedProfile;
-        setSavedProfile(profile);
-        setShowSavedProfile(true);
-      } catch (e) {
-        localStorage.removeItem('rememberedProfile');
-      }
     }
   }, [])
 
@@ -77,26 +86,29 @@ function LoginContent() {
     setErrorMsg(null)
     
     const formData = new FormData(e.currentTarget)
-    const email = formData.get('email') as string
+    const email = (formData.get('email') as string || adminEmail).trim()
+    const password = (formData.get('password') as string || adminPassword)
     
+    formData.set('email', email)
+    formData.set('password', password)
+
     const res = await login(formData)
     
     if (res.error) {
       setErrorMsg(res.error)
       setLoading(false)
     } else if (res.success && res.redirectUrl) {
-      // Always save the profile for quick reconnect
-      if (res.profile) {
-        const p: SavedProfile = {
-          first_name: res.profile.first_name,
-          last_name: res.profile.last_name,
-          photo_url: res.profile.photo_url,
-          church_logo: res.profile.church_logo,
-          role: 'admin',
-          email: email
-        }
-        localStorage.setItem('rememberedProfile', JSON.stringify(p))
+      // Sauvegarde automatique du profil et des accès pour la reconnexion 1-clic
+      const p: SavedProfile = {
+        first_name: res.profile?.first_name || 'Pasteur',
+        last_name: res.profile?.last_name || '',
+        photo_url: res.profile?.photo_url || '',
+        church_logo: res.profile?.church_logo || '',
+        role: 'admin',
+        email: email,
+        password: password
       }
+      localStorage.setItem('rememberedProfile', JSON.stringify(p))
       window.location.href = res.redirectUrl
     }
   }
@@ -114,7 +126,6 @@ function LoginContent() {
       setErrorMsg(res.error)
       setLoading(false)
     } else if (res.success && res.redirectUrl) {
-      // Pas de profil enregistré automatiquement à la première connexion, ou on pourrait.
       window.location.href = res.redirectUrl
     }
   }
@@ -126,16 +137,19 @@ function LoginContent() {
     setErrorMsg(null)
     
     const formData = new FormData(e.currentTarget)
-    const identifier = formData.get('identifier') as string
-    const church_code = formData.get('church_code') as string
+    const identifier = (formData.get('identifier') as string || memberIdentifier).trim()
+    const church_code = (formData.get('church_code') as string || memberChurchCode).trim()
     
+    formData.set('identifier', identifier)
+    formData.set('church_code', church_code)
+
     const res = await memberLoginAction(formData)
     
     if (res.error) {
       setErrorMsg(res.error)
       setLoading(false)
     } else if (res.success && res.profile) {
-      // Always save profile for quick reconnect (no checkbox required)
+      // Sauvegarde automatique pour reconnexion 1-clic
       const p: SavedProfile = {
         first_name: res.profile.first_name,
         last_name: res.profile.last_name,
@@ -150,35 +164,71 @@ function LoginContent() {
     }
   }
   
-  // Handle clicking on the saved profile card
-  const handleSavedProfileClick = () => {
-    if (!savedProfile) return
+  // Handle clicking on the saved profile card -> RECONNEXION DIRECTE EN 1 CLIC
+  const handleSavedProfileClick = async () => {
+    if (!savedProfile || loading) return
     
+    setLoading(true)
+    setErrorMsg(null)
+
+    // 1. RECONNEXION PASTEUR / ADMIN EN 1 CLIC
+    if (savedProfile.role === 'admin' && savedProfile.email && savedProfile.password) {
+      const fd = new FormData()
+      fd.append('email', savedProfile.email)
+      fd.append('password', savedProfile.password)
+
+      try {
+        const res = await login(fd)
+        if (res.error) {
+          setErrorMsg(res.error)
+          setShowSavedProfile(false)
+          setActiveTab('admin')
+        } else if (res.success && res.redirectUrl) {
+          window.location.href = res.redirectUrl
+          return
+        }
+      } catch (err) {
+        console.error('Erreur reconnexion rapide admin:', err)
+        setErrorMsg('Erreur de reconnexion. Veuillez ressaisir votre mot de passe.')
+        setShowSavedProfile(false)
+        setActiveTab('admin')
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
+
+    // 2. RECONNEXION MEMBRE / FIDÈLE EN 1 CLIC
+    if (savedProfile.role === 'member' && savedProfile.identifier && savedProfile.church_code) {
+      const fd = new FormData()
+      fd.append('identifier', savedProfile.identifier)
+      fd.append('church_code', savedProfile.church_code)
+      
+      try {
+        const res = await memberLoginAction(fd)
+        if (res.error) {
+          setErrorMsg(res.error)
+          setShowSavedProfile(false)
+          setActiveTab('member')
+        } else {
+          window.location.href = '/member-dashboard'
+          return
+        }
+      } catch (err: unknown) {
+        console.error('Reconnexion membre impossible:', err)
+        setErrorMsg('Connexion impossible. Veuillez réessayer.')
+        setShowSavedProfile(false)
+        setActiveTab('member')
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
+
+    // Si le mot de passe n'était pas mémorisé, basculer vers le formulaire pré-rempli
     setActiveTab(savedProfile.role)
     setShowSavedProfile(false)
-    
-    // Si c'est un membre, on essaie de le reconnecter immédiatement si on a ses infos
-    if (savedProfile.role === 'member' && savedProfile.identifier && savedProfile.church_code) {
-       setLoading(true)
-       const fd = new FormData()
-       fd.append('identifier', savedProfile.identifier)
-       fd.append('church_code', savedProfile.church_code)
-       
-       memberLoginAction(fd).then(res => {
-          if (res.error) {
-            setErrorMsg(res.error)
-          } else {
-            window.location.href = '/member-dashboard'
-          }
-       }).catch((err: unknown) => {
-          // Sans ce catch, un rejet de l'action laissait le formulaire bloqué
-          // (loading à true) sans aucun message pour l'utilisateur.
-          console.error('Reconnexion membre impossible:', err)
-          setErrorMsg('Connexion impossible. Veuillez réessayer.')
-       }).finally(() => {
-          setLoading(false)
-       })
-    }
+    setLoading(false)
   }
 
   const handleDifferentAccount = () => {
@@ -356,13 +406,17 @@ function LoginContent() {
                           name="email"
                           type="email"
                           required
-                          defaultValue={savedProfile?.email || ''}
+                          value={adminEmail}
+                          onChange={(e) => setAdminEmail(e.target.value)}
                           className="w-full px-4 py-3 mt-1 border rounded-xl border-gray-300 dark:border-gray-700 dark:bg-slate-800 focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all outline-none"
                           placeholder="votre@email.com"
                         />
                       </div>
                       
-                      <PasswordInput />
+                      <PasswordInput 
+                        value={adminPassword}
+                        onChange={(e) => setAdminPassword(e.target.value)}
+                      />
                       
                       <div className="flex items-center mt-4">
                         <input 
@@ -373,7 +427,7 @@ function LoginContent() {
                           className="w-4 h-4 text-primary-900 border-gray-300 rounded focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-600" 
                         />
                         <label htmlFor="remember-admin" className="ml-2 block text-sm text-gray-700 dark:text-gray-300 font-medium">
-                          Se souvenir de mon profil
+                          Mémoriser mes identifiants pour reconnexion en 1 clic
                         </label>
                       </div>
 
@@ -441,7 +495,8 @@ function LoginContent() {
                       name="church_code"
                       type="text"
                       required
-                      defaultValue={savedProfile?.church_code || ''}
+                      value={memberChurchCode}
+                      onChange={(e) => setMemberChurchCode(e.target.value)}
                       className="w-full px-4 py-3 mt-1 border rounded-xl border-gray-300 dark:border-gray-700 dark:bg-slate-800 focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all outline-none"
                       placeholder="Ex: EGLISE225"
                     />
@@ -456,7 +511,8 @@ function LoginContent() {
                       name="identifier"
                       type="text"
                       required
-                      defaultValue={savedProfile?.identifier || ''}
+                      value={memberIdentifier}
+                      onChange={(e) => setMemberIdentifier(e.target.value)}
                       className="w-full px-4 py-3 mt-1 border rounded-xl border-gray-300 dark:border-gray-700 dark:bg-slate-800 focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all outline-none"
                       placeholder="Votre numéro ou adresse email"
                     />
@@ -471,7 +527,7 @@ function LoginContent() {
                       className="w-4 h-4 text-primary-900 border-gray-300 rounded focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-600" 
                     />
                     <label htmlFor="remember-member" className="ml-2 block text-sm text-gray-700 dark:text-gray-300 font-medium">
-                      Se souvenir de moi pour la prochaine fois
+                      Mémoriser mes identifiants pour reconnexion en 1 clic
                     </label>
                   </div>
 

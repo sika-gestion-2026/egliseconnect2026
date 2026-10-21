@@ -26,7 +26,8 @@ export default function Sidebar({
   churchName, 
   logoUrl, 
   navItems, 
-  userEmail
+  userEmail,
+  isSuperAdmin
 }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
@@ -122,6 +123,12 @@ export default function Sidebar({
           })()}
         </nav>
         <div className="p-4 border-t border-primary-500/30 bg-primary-950/30 backdrop-blur-sm mt-auto flex flex-col gap-2">
+          {isSuperAdmin && (
+            <Link href="/super-admin" className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 text-gold-400 bg-gold-500/15 hover:bg-gold-500/25 border border-gold-500/30 font-bold text-sm">
+              <span>🏛️</span>
+              <span>Tour Super Admin</span>
+            </Link>
+          )}
           {/* Paramètres */}
           <Link href="/dashboard/settings" className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 text-gray-300 hover:text-white hover:bg-white/10 hover:shadow-lg hover:shadow-white/5">
             <Settings size={18} />

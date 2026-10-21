@@ -47,7 +47,7 @@ export async function infiltrateChurch(churchId: string) {
   // revalidatePath est désormais importé en ESM (voir en haut du fichier).
   revalidatePath('/dashboard', 'layout');
   revalidatePath('/super-admin', 'layout');
-  redirect('/dashboard')
+  return { success: true }
 }
 
 export async function deleteChurch(churchId: string) {

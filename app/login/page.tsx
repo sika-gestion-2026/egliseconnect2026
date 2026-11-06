@@ -14,7 +14,6 @@ interface SavedProfile {
   church_logo: string
   role: 'admin' | 'member'
   email?: string
-  password?: string
   identifier?: string
   church_code?: string
 }
@@ -48,11 +47,14 @@ function LoginContent() {
     const stored = localStorage.getItem('rememberedProfile');
     if (stored) {
       try {
-        const profile = JSON.parse(stored) as SavedProfile;
+        const profile = JSON.parse(stored) as SavedProfile & { password?: string };
+        if (profile.password) {
+          delete profile.password
+          localStorage.setItem('rememberedProfile', JSON.stringify(profile))
+        }
         setSavedProfile(profile);
         setShowSavedProfile(true);
         if (profile.email) setAdminEmail(profile.email);
-        if (profile.password) setAdminPassword(profile.password);
         if (profile.church_code) setMemberChurchCode(profile.church_code);
         if (profile.identifier) setMemberIdentifier(profile.identifier);
         return;
@@ -105,8 +107,7 @@ function LoginContent() {
         photo_url: res.profile?.photo_url || '',
         church_logo: res.profile?.church_logo || '',
         role: 'admin',
-        email: email,
-        password: password
+        email: email
       }
       localStorage.setItem('rememberedProfile', JSON.stringify(p))
       window.location.href = res.redirectUrl
@@ -171,30 +172,10 @@ function LoginContent() {
     setLoading(true)
     setErrorMsg(null)
 
-    // 1. RECONNEXION PASTEUR / ADMIN EN 1 CLIC
-    if (savedProfile.role === 'admin' && savedProfile.email && savedProfile.password) {
-      const fd = new FormData()
-      fd.append('email', savedProfile.email)
-      fd.append('password', savedProfile.password)
-
-      try {
-        const res = await login(fd)
-        if (res.error) {
-          setErrorMsg(res.error)
-          setShowSavedProfile(false)
-          setActiveTab('admin')
-        } else if (res.success && res.redirectUrl) {
-          window.location.href = res.redirectUrl
-          return
-        }
-      } catch (err) {
-        console.error('Erreur reconnexion rapide admin:', err)
-        setErrorMsg('Erreur de reconnexion. Veuillez ressaisir votre mot de passe.')
-        setShowSavedProfile(false)
-        setActiveTab('admin')
-      } finally {
-        setLoading(false)
-      }
+    // La session du pasteur est déjà dans le cookie. Un clic ouvre l'espace
+    // si elle est encore valable. Le mot de passe n'est jamais gardé dans le navigateur.
+    if (savedProfile.role === 'admin' && savedProfile.email) {
+      window.location.href = '/dashboard'
       return
     }
 

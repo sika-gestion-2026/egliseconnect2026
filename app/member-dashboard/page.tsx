@@ -1,4 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import MemberDashboardClient from "./MemberDashboardClient";
@@ -123,9 +124,12 @@ export default async function MemberDashboard() {
   let thisYearCount = 0;
 
   // --- Lot 1 : identité (église + profil membre) --------------------------
+  const admin = createAdminClient();
   const [{ data: church }, { data: memberProfile }] = await Promise.all([
     supabase.from("churches").select("*").eq("id", targetChurchId).single(),
-    supabase.rpc("get_member_secure", { p_member_id: targetMemberId }),
+    admin
+      ? admin.from("members").select("*").eq("id", targetMemberId).eq("church_id", targetChurchId).maybeSingle()
+      : supabase.rpc("get_member_secure", { p_member_id: targetMemberId }),
   ]);
 
   if (memberProfile) {

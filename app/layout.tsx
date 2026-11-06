@@ -5,6 +5,8 @@ import { SuperAdminOmnibox } from "@/components/SuperAdminOmnibox";
 import ToastProvider from "@/components/ToastProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { InstallPWA } from "@/components/InstallPWA";
+import { CodeShield } from "@/components/CodeShield";
+import { siteConfig } from "@/utils/config";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -21,6 +23,8 @@ export const metadata: Metadata = {
   title: "Église Connect",
   description: "Connectés à Dieu, unis entre nous.",
   manifest: "/manifest.json",
+  authors: [{ name: siteConfig.creatorName }],
+  other: { copyright: siteConfig.signature },
 };
 
 export default function RootLayout({
@@ -62,6 +66,7 @@ export default function RootLayout({
           <InstallPWA />
           <SuperAdminOmnibox />
           <ToastProvider />
+          <CodeShield />
         </ThemeProvider>
       </body>
     </html>

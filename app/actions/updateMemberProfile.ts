@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
+import { createAdminClient } from '@/utils/supabase/admin'
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
@@ -104,27 +105,34 @@ export async function updateMemberProfile(formData: FormData) {
     }
   }
 
-  // Call the secure RPC function to bypass RLS for members updating their own profile
-  const { data, error } = await supabase.rpc('update_member_profile_secure', {
-    p_member_id: targetMemberId,
-    p_church_id: targetChurchId,
-    p_first_name: firstName,
-    p_last_name: lastName,
-    p_phone: phone || null,
-    p_email: email || null,
-    p_birth_date: birthDate || null,
-    p_commune: commune || null,
-    p_quartier: quartier || null,
-    p_profession: profession || null,
-    p_photo_url: finalPhotoUrl || null
-  })
-
-  if (error) {
-    return { error: 'Erreur lors de la mise à jour du profil.' }
+  // Écriture par la clé serveur, bornée au membre de la session signée.
+  // L'ancienne fonction SQL publique n'est plus appelée : un visiteur qui
+  // connaissait les deux identifiants pouvait modifier n'importe quel membre.
+  const admin = createAdminClient()
+  if (!admin) {
+    return { error: 'Configuration serveur manquante.' }
   }
-  
-  if (data?.error) {
-    return { error: data.error }
+
+  const { data, error } = await admin
+    .from('members')
+    .update({
+      first_name: firstName,
+      last_name: lastName,
+      phone: phone || null,
+      email: email || null,
+      birth_date: birthDate || null,
+      commune: commune || null,
+      quartier: quartier || null,
+      profession: profession || null,
+      photo_url: finalPhotoUrl || null,
+    })
+    .eq('id', targetMemberId)
+    .eq('church_id', targetChurchId)
+    .select('id')
+    .maybeSingle()
+
+  if (error || !data) {
+    return { error: 'Erreur lors de la mise à jour du profil.' }
   }
 
   revalidatePath('/member-dashboard')

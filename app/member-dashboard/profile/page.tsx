@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import ProfileForm from "./ProfileForm";
@@ -7,7 +7,6 @@ import { verifyMemberSession } from "@/utils/memberSession";
 
 export default async function MemberProfilePage() {
   const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
 
   const memberSession = cookieStore.get("member_session")?.value;
   let targetChurchId = null;
@@ -25,17 +24,16 @@ export default async function MemberProfilePage() {
     redirect("/login?space=member");
   }
 
-  // Use the admin/RPC to fetch member details if RLS is strict
-  // Wait, the member can already view themselves because of this policy:
-  // "Members can view other members in their church" ON public.members FOR SELECT TO authenticated USING (church_id = public.get_user_church_id());
-  // But wait! This policy is for "authenticated" users (Supabase Auth).
-  // The member login is ANONYMOUS! 
-  // So how does the dashboard page fetch the member?
-  // Let's check: the dashboard page fetches it via `supabase.from('members')` but the server client might bypass RLS? No.
-  // Wait, in `page.tsx` of member-dashboard, it did `supabase.from('members')`. If it worked there, it works here.
-  const { data: member, error } = await supabase.rpc('get_member_secure', {
-    p_member_id: targetMemberId
-  });
+  const admin = createAdminClient();
+  if (!admin) {
+    redirect("/login?space=member");
+  }
+  const { data: member, error } = await admin
+    .from("members")
+    .select("*")
+    .eq("id", targetMemberId)
+    .eq("church_id", targetChurchId)
+    .maybeSingle();
 
   if (error || !member) {
     redirect("/login?space=member");

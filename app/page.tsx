@@ -54,7 +54,7 @@ export default function Home() {
 
       <footer className="w-full py-6 text-center border-t border-slate-200 dark:border-slate-800/50 bg-background/50 backdrop-blur-sm relative z-10">
         <p className="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-wide">
-          Créé par {siteConfig.creatorName} • {siteConfig.creatorPhone}
+          {siteConfig.signature}
         </p>
       </footer>
     </div>

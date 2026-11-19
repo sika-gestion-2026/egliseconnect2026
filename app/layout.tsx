@@ -44,16 +44,20 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+              if (typeof window !== 'undefined') {
+                if ('serviceWorker' in navigator && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
                   navigator.serviceWorker.getRegistrations().then(function(regs) {
                     for (var r of regs) { r.unregister(); }
                   });
-                  if ('caches' in window) {
-                    caches.keys().then(function(names) {
-                      for (var name of names) { caches.delete(name); }
-                    });
-                  }
+                }
+                if ('caches' in window) {
+                  caches.keys().then(function(names) {
+                    for (var name of names) {
+                      if (name.includes('pages') || name.includes('start-url')) {
+                        caches.delete(name);
+                      }
+                    }
+                  });
                 }
               }
             `,

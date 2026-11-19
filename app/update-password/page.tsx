@@ -1,12 +1,25 @@
 import { updatePassword } from '@/app/login/actions'
+import { createClient } from '@/utils/supabase/server'
+import { cookies } from 'next/headers'
 
 export default async function UpdatePasswordPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ error?: string }>
+  searchParams?: Promise<{ error?: string; code?: string }>
 }) {
   const params = await searchParams
   const errorMsg = params?.error
+  const code = params?.code
+
+  if (code) {
+    try {
+      const cookieStore = await cookies()
+      const supabase = createClient(cookieStore)
+      await supabase.auth.exchangeCodeForSession(code)
+    } catch (e) {
+      console.error('Error exchanging code in update-password:', e)
+    }
+  }
   return (
     <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-background p-4">
       <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-xl overflow-hidden border-t-4 border-gold-500">
